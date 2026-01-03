@@ -14,9 +14,10 @@ html, body {
 img { max-width: 100%; height: auto; }
 .hidden { display: none !important; }
 
+.foxdent { color: #6f8f7a; font-weight: 900; }
+
 /* =========================================================
    MODE SWITCH (LOGIN vs APP)
-   (JS adds body.mode-login or body.mode-app)
 ========================================================= */
 body.mode-login {
   min-height: 100vh;
@@ -49,10 +50,8 @@ body.mode-app {
 }
 .btn-secondary:hover { background: #cfc9bf; }
 
-.foxdent { color: #6f8f7a; font-weight: 900; }
-
 /* =========================================================
-   LOGIN PAGE (CENTERED LIKE YOUR MOCKUP)
+   LOGIN PAGE
 ========================================================= */
 #loginView.login-page {
   width: 100%;
@@ -60,8 +59,8 @@ body.mode-app {
   padding: 56px 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;     /* ✅ horizontal center */
-  justify-content: center; /* ✅ vertical center */
+  align-items: center;
+  justify-content: center;
   gap: 18px;
 }
 
@@ -69,7 +68,6 @@ body.mode-app {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 8px;
 }
 
@@ -129,11 +127,10 @@ body.mode-app {
   flex-direction: column;
   gap: 6px;
   margin: 10px 0;
-  align-items: center; /* keeps label+input centered */
+  align-items: center;
 }
 
 .login-form label {
-  display: block;
   font-size: 11px;
   font-weight: 800;
   text-align: center;
@@ -183,7 +180,6 @@ body.mode-app {
 }
 
 .login-foot {
-  display: block;
   margin-top: 14px;
   font-size: 11px;
   color: rgba(31,42,36,.7);
@@ -193,7 +189,174 @@ body.mode-app {
 .linkish { text-decoration: underline; cursor: pointer; }
 
 /* =========================================================
-   DASHBOARD LAYOUT
+   APP SHELL: SIDEBAR + MAIN
+========================================================= */
+.app-main {
+  margin-left: 72px; /* collapsed sidebar width */
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 72px;              /* collapsed */
+  background: #fff;
+  border-right: 1px solid #e3ddd3;
+  box-shadow: 10px 0 24px rgba(0,0,0,.06);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 10px;
+  z-index: 50;
+  transition: width .18s ease;
+}
+
+.sidebar.open {
+  width: 240px;             /* expanded */
+}
+
+.menu-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e3ddd3;
+  background: #f7f3ec;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  margin: 4px auto 10px;
+}
+
+.menu-btn:hover { filter: brightness(.98); }
+
+.burger {
+  width: 18px;
+  height: 12px;
+  position: relative;
+  display: block;
+}
+.burger::before,
+.burger::after,
+.burger span {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(31,42,36,.8);
+  border-radius: 2px;
+}
+.burger::before { top: 0; }
+.burger::after { bottom: 0; }
+.burger span { top: 5px; }
+
+/* Brand area inside sidebar */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 12px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.sidebar-title {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .15s ease, transform .15s ease;
+  white-space: nowrap;
+}
+
+.sidebar.open .sidebar-title {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.sidebar-powered {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(31,42,36,.8);
+}
+
+.sidebar-office {
+  font-size: 13px;
+  font-weight: 900;
+  margin-top: 2px;
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #1f2a24;
+  font-weight: 800;
+  border: 1px solid transparent;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.nav-item:hover {
+  background: #f7f3ec;
+  border-color: #e3ddd3;
+}
+
+.nav-item.active {
+  background: rgba(111,143,122,.12);
+  border-color: rgba(111,143,122,.22);
+  color: #1f2a24;
+}
+
+/* Hide nav text when collapsed */
+.sidebar:not(.open) .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Footer in sidebar */
+.sidebar-foot {
+  margin-top: auto;
+  padding: 10px 6px 6px;
+}
+
+.btn-logout-side {
+  width: 100%;
+  display: none;
+}
+.sidebar.open .btn-logout-side {
+  display: block;
+}
+
+/* Overlay for mobile when sidebar open */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 40;
+}
+
+/* =========================================================
+   DASHBOARD (your existing styles)
 ========================================================= */
 .container {
   max-width: 1200px;
@@ -330,6 +493,19 @@ tbody td {
   margin-top: 18px;
 }
 
+/* Simple headings for other routes */
+.simple-head { margin: 6px 0 14px; }
+.simple-title { margin: 0; font-size: 22px; font-weight: 900; }
+.simple-sub { margin: 6px 0 0; color: rgba(31,42,36,.75); font-weight: 650; }
+
+/* Mobile behavior */
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
+
+  .app-main { margin-left: 72px; }
+
+  /* On mobile, expanded sidebar overlays content */
+  .sidebar.open {
+    width: 260px;
+  }
 }
