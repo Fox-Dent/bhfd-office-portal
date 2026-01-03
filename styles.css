@@ -16,9 +16,8 @@ img { max-width: 100%; height: auto; }
 
 /* =========================================================
    MODE SWITCH (LOGIN vs APP)
+   (JS adds body.mode-login or body.mode-app)
 ========================================================= */
-
-/* LOGIN MODE */
 body.mode-login {
   min-height: 100vh;
   display: flex;
@@ -26,27 +25,6 @@ body.mode-login {
   justify-content: center;
 }
 
-/* In login mode, the main dashboard container should NOT apply */
-body.mode-login .container {
-  max-width: none;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-/* Center login view */
-body.mode-login #loginView {
-  width: 100%;
-  min-height: 100vh;
-  padding: 56px 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-/* APP MODE */
 body.mode-app {
   display: block;
 }
@@ -71,33 +49,46 @@ body.mode-app {
 }
 .btn-secondary:hover { background: #cfc9bf; }
 
+.foxdent { color: #6f8f7a; font-weight: 900; }
+
 /* =========================================================
-   LOGIN PAGE LOOK
+   LOGIN PAGE (CENTERED LIKE YOUR MOCKUP)
 ========================================================= */
-.powered, .powered-by {
+#loginView.login-page {
+  width: 100%;
+  min-height: 100vh;
+  padding: 56px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;     /* ✅ horizontal center */
+  justify-content: center; /* ✅ vertical center */
+  gap: 18px;
+}
+
+.login-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.login-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.login-powered {
   font-size: 13px;
   font-weight: 700;
   color: rgba(31,42,36,.85);
   text-align: center;
 }
-.foxdent { color: #6f8f7a; font-weight: 900; }
 
-/* Small centered logo */
-body.mode-login img.logo,
-body.mode-login img[alt*="FoxDent" i] {
-  width: 54px !important;
-  height: 54px !important;
-  max-width: 54px !important;
-  max-height: 54px !important;
-  object-fit: contain !important;
-  display: block !important;
-  margin: 0 auto !important;
-}
-
-/* Login card */
-body.mode-login .login-card,
-body.mode-login #loginCard,
-body.mode-login form#loginForm {
+.login-card {
   width: 100%;
   max-width: 420px;
   background: rgba(255,255,255,.88);
@@ -109,30 +100,47 @@ body.mode-login form#loginForm {
   margin: 0 auto;
 }
 
-body.mode-login h1 {
+.login-title {
   margin: 0 0 2px 0;
   font-size: 22px;
   font-weight: 900;
 }
 
-body.mode-login .login-sub,
-body.mode-login h2 {
+.login-sub {
   margin: 0 0 16px 0;
   font-size: 12px;
   font-weight: 700;
   color: rgba(31,42,36,.75);
 }
 
-body.mode-login label {
+.login-error {
+  margin: 0 0 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(179,58,42,.10);
+  border: 1px solid rgba(179,58,42,.22);
+  color: #8e2d21;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0;
+  align-items: center; /* keeps label+input centered */
+}
+
+.login-form label {
   display: block;
   font-size: 11px;
   font-weight: 800;
-  margin: 10px 0 6px;
   text-align: center;
 }
 
-body.mode-login input[type="text"],
-body.mode-login input[type="password"] {
+.login-form input[type="text"],
+.login-form input[type="password"] {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -142,17 +150,14 @@ body.mode-login input[type="password"] {
   background: rgba(255,255,255,.95);
   font-size: 13px;
   outline: none;
-  display: block;
-  margin: 0 auto;
 }
 
-body.mode-login input:focus {
+.login-form input:focus {
   border-color: rgba(111,143,122,.65);
   box-shadow: 0 0 0 3px rgba(111,143,122,.15);
 }
 
-body.mode-login .remember,
-body.mode-login .checkbox {
+.checkbox {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -162,8 +167,7 @@ body.mode-login .checkbox {
   color: rgba(31,42,36,.8);
 }
 
-body.mode-login button,
-body.mode-login input[type="submit"] {
+.btn-login {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -178,14 +182,15 @@ body.mode-login input[type="submit"] {
   margin: 6px auto 0;
 }
 
-body.mode-login .terms,
-body.mode-login small {
+.login-foot {
   display: block;
   margin-top: 14px;
   font-size: 11px;
   color: rgba(31,42,36,.7);
   text-align: center;
 }
+
+.linkish { text-decoration: underline; cursor: pointer; }
 
 /* =========================================================
    DASHBOARD LAYOUT
