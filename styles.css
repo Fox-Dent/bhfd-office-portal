@@ -2,9 +2,7 @@
    GLOBAL RESET / BASE
 ========================================================= */
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html, body {
   margin: 0;
@@ -14,14 +12,9 @@ html, body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-img {
-  max-width: 100%;
-  height: auto;
-}
+img { max-width: 100%; height: auto; }
 
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 /* =========================================================
    BUTTONS
@@ -33,152 +26,195 @@ img {
   border: none;
   border-radius: 12px;
   padding: 10px 14px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
 }
-
-.btn:hover {
-  filter: brightness(0.97);
-}
+.btn:hover { filter: brightness(.97); }
 
 .btn-secondary {
   background: #d9d4cc;
   color: #1f2a24;
 }
-
-.btn-secondary:hover {
-  background: #cfc9bf;
-}
+.btn-secondary:hover { background: #cfc9bf; }
 
 /* =========================================================
-   LOGIN PAGE
+   LOGIN VIEW (ROBUST TARGETING)
+   Works even if your classes differ.
 ========================================================= */
 
-#loginView.login-page {
+/* Your login view wrapper (you said it's a page before dashboard) */
+#loginView {
   min-height: 100vh;
   width: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 16px;
-  background: radial-gradient(circle at 15% 0%, #ffffff 0%, #f4efe7 55%, #efe8dd 100%);
+  align-items: center;     /* vertical center */
+  justify-content: center; /* horizontal center */
+  padding: 48px 16px;
+  background: #f4efe7;
 }
 
-.login-wrap {
+/* Center column */
+#loginView > * {
   width: 100%;
   max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
 }
 
-/* Logo + header */
-.login-top {
+/* Top branding area (logo + powered) */
+#loginView .login-top,
+#loginView .brand-top,
+#loginView .top,
+#loginView header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 auto 18px auto;
+  text-align: left;
+}
+
+/* FORCE the login logo to be small regardless of class */
+#loginView img {
+  width: 58px !important;
+  height: 58px !important;
+  max-width: 58px !important;
+  max-height: 58px !important;
+  object-fit: contain;
+}
+
+/* If you have a big “logo” class elsewhere, limit it only on login */
+#loginView img.logo,
+#loginView img#logo,
+#loginView img[alt*="FoxDent" i] {
+  width: 58px !important;
+  height: 58px !important;
+}
+
+/* “Powered by FoxDent” text block */
+#loginView .powered,
+#loginView .login-powered,
+#loginView .powered-by {
+  font-size: 13px;
+  color: #1f2a24;
+  line-height: 1.1;
+}
+#loginView .foxdent {
+  color: #6f8f7a;
+  font-weight: 900;
+}
+
+/* Center the entire login card */
+#loginView .login-card,
+#loginView .card,
+#loginView .panel,
+#loginView .box,
+#loginView form {
+  margin: 0 auto;
+}
+
+/* The login card itself */
+#loginView .login-card,
+#loginView .card,
+#loginView .panel,
+#loginView .box {
+  background: rgba(255,255,255,.85);
+  border: 2px solid rgba(111,143,122,.18);
+  border-radius: 10px; /* screenshot has squarer corners */
+  box-shadow: 0 14px 30px rgba(0,0,0,.10);
+  padding: 22px;
   text-align: center;
 }
 
-.login-logo {
-  width: 88px !important;
-  height: 88px !important;
-  max-width: 88px !important;
-  max-height: 88px !important;
-  object-fit: contain;
-  background: #fff;
-  border-radius: 18px;
-  padding: 10px;
-  border: 1px solid #e3ddd3;
-  box-shadow: 0 10px 28px rgba(0,0,0,.12);
-}
-
-.login-powered {
-  font-size: 13px;
-  color: #4a5a51;
-}
-
-.login-title {
+/* Title like screenshot */
+#loginView h1,
+#loginView .login-title {
+  margin: 0 0 2px 0;
   font-size: 24px;
   font-weight: 900;
-  margin: 0;
 }
 
-.login-sub {
-  font-size: 13px;
-  color: #4a5a51;
-}
-
-/* Card */
-.login-card {
-  width: 100%;
-  background: rgba(255,255,255,.94);
-  border-radius: 18px;
-  border: 1px solid #e3ddd3;
-  box-shadow: 0 18px 50px rgba(0,0,0,.14);
-  padding: 22px;
-}
-
-.login-error {
-  background: #b33a2a;
-  color: #fff;
-  padding: 10px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.login-form {
-  display: grid;
-  gap: 12px;
-}
-
-.login-form label {
+#loginView .login-sub,
+#loginView .subtitle,
+#loginView h2 {
+  margin: 0 0 16px 0;
   font-size: 12px;
   font-weight: 700;
-  color: #3c4b43;
+  color: #1f2a24;
+  opacity: .8;
 }
 
-.login-form input {
-  padding: 11px 12px;
-  border-radius: 12px;
-  border: 1px solid #d7d0c6;
-  font-size: 14px;
+/* Labels */
+#loginView label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  margin: 10px 0 5px;
+  color: #1f2a24;
 }
 
-.login-form input:focus {
+/* Inputs: slimmer like screenshot */
+#loginView input[type="text"],
+#loginView input[type="password"],
+#loginView input[type="email"] {
+  width: 70%;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 7px 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.9);
+  font-size: 13px;
   outline: none;
-  border-color: #6f8f7a;
-  box-shadow: 0 0 0 4px rgba(111,143,122,.18);
 }
 
-.checkbox {
+#loginView input:focus {
+  border-color: rgba(111,143,122,.65);
+  box-shadow: 0 0 0 3px rgba(111,143,122,.15);
+}
+
+/* Checkbox line */
+#loginView .checkbox,
+#loginView .remember {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  color: #4a5a51;
+  margin: 10px 0 14px;
+  font-size: 11px;
+  color: rgba(31,42,36,.8);
 }
 
-.btn-login {
-  margin-top: 6px;
-  width: 100%;
-  padding: 12px;
-  font-size: 15px;
+/* Continue button like screenshot (flat bar) */
+#loginView button,
+#loginView .btn-login,
+#loginView input[type="submit"] {
+  width: 70%;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 8px 12px;
+  border-radius: 2px;
+  border: none;
+  background: #6f8f7a;
+  color: #fff;
   font-weight: 900;
+  cursor: pointer;
+}
+#loginView button:hover,
+#loginView input[type="submit"]:hover {
+  filter: brightness(.97);
 }
 
-.login-foot {
-  font-size: 12px;
-  color: #6b776f;
-  text-align: center;
-  margin-top: 10px;
+/* Footer copy */
+#loginView .login-foot,
+#loginView .terms,
+#loginView small {
+  display: block;
+  margin-top: 14px;
+  font-size: 11px;
+  color: rgba(31,42,36,.75);
 }
 
 /* =========================================================
-   DASHBOARD LAYOUT
+   DASHBOARD (kept stable)
 ========================================================= */
 
 .container {
@@ -207,39 +243,17 @@ img {
   gap: 12px;
 }
 
-.logo {
-  width: 56px;
-  height: 56px;
-}
+.logo { width: 56px; height: 56px; }
 
-.brand-stack {
-  display: flex;
-  flex-direction: column;
-}
+.brand-stack { display: flex; flex-direction: column; }
 
-.powered {
-  font-size: 12px;
-  color: #4a5a51;
-}
+.powered { font-size: 12px; color: #4a5a51; }
 
-.welcome {
-  font-size: 18px;
-  font-weight: 900;
-}
+.welcome { font-size: 18px; font-weight: 900; }
 
-.brand-sub {
-  font-size: 13px;
-  color: #4a5a51;
-}
+.brand-sub { font-size: 13px; color: #4a5a51; }
 
-.header-actions {
-  display: flex;
-  gap: 10px;
-}
-
-/* =========================================================
-   CARDS
-========================================================= */
+.header-actions { display: flex; gap: 10px; }
 
 .card {
   background: #fff;
@@ -249,23 +263,10 @@ img {
   padding: 16px;
 }
 
-.card-title {
-  font-size: 16px;
-  font-weight: 900;
-}
+.card-title { font-size: 16px; font-weight: 900; }
+.card-sub { font-size: 13px; color: #4a5a51; }
 
-.card-sub {
-  font-size: 13px;
-  color: #4a5a51;
-}
-
-/* =========================================================
-   FILTER BAR
-========================================================= */
-
-.filters {
-  margin-bottom: 18px;
-}
+.filters { margin-bottom: 18px; }
 
 .filters-row {
   display: flex;
@@ -274,16 +275,9 @@ img {
   gap: 12px;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+.field { display: flex; flex-direction: column; gap: 4px; }
 
-.field label {
-  font-size: 12px;
-  font-weight: 700;
-}
+.field label { font-size: 12px; font-weight: 700; }
 
 .field input {
   padding: 8px 10px;
@@ -291,10 +285,7 @@ img {
   border: 1px solid #d7d0c6;
 }
 
-.quick {
-  display: flex;
-  gap: 6px;
-}
+.quick { display: flex; gap: 6px; }
 
 .pill {
   background: #eee8de;
@@ -304,24 +295,10 @@ img {
   font-size: 12px;
   cursor: pointer;
 }
+.pill:hover { background: #e1dbd0; }
 
-.pill:hover {
-  background: #e1dbd0;
-}
-
-.status-text.ok {
-  color: #2b7a45;
-  font-weight: 700;
-}
-
-.status-text.err {
-  color: #b33a2a;
-  font-weight: 700;
-}
-
-/* =========================================================
-   GRID / CHARTS
-========================================================= */
+.status-text.ok { color: #2b7a45; font-weight: 800; }
+.status-text.err { color: #b33a2a; font-weight: 800; }
 
 .grid {
   display: grid;
@@ -330,19 +307,11 @@ img {
   margin-bottom: 18px;
 }
 
-.chart-card {
-  display: flex;
-  flex-direction: column;
-}
+.chart-card { display: flex; flex-direction: column; }
 
-.chart-wrap {
-  margin-top: 12px;
-}
+.chart-wrap { margin-top: 12px; }
 
-.chart-wrap.pie {
-  max-width: 260px;
-  margin: 12px auto 0;
-}
+.chart-wrap.pie { max-width: 260px; margin: 12px auto 0; }
 
 .legend {
   display: flex;
@@ -359,21 +328,10 @@ img {
   display: inline-block;
 }
 
-.dot-new {
-  background: #6f8f7a;
-}
+.dot-new { background: #6f8f7a; }
+.dot-return { background: #2f7c9a; }
 
-.dot-return {
-  background: #2f7c9a;
-}
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-.table-card {
-  margin-top: 10px;
-}
+.table-card { margin-top: 10px; }
 
 .table-head {
   display: flex;
@@ -383,10 +341,7 @@ img {
   margin-bottom: 10px;
 }
 
-.table-tools {
-  display: flex;
-  gap: 8px;
-}
+.table-tools { display: flex; gap: 8px; }
 
 .search {
   padding: 8px 10px;
@@ -394,14 +349,9 @@ img {
   border: 1px solid #d7d0c6;
 }
 
-.table-wrap {
-  overflow-x: auto;
-}
+.table-wrap { overflow-x: auto; }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
+table { width: 100%; border-collapse: collapse; }
 
 thead th {
   background: #eef3ee;
@@ -416,33 +366,17 @@ tbody td {
   font-size: 13px;
 }
 
-.empty {
-  text-align: center;
-  padding: 16px;
-  color: #6b776f;
-}
+.empty { text-align: center; padding: 16px; color: #6b776f; }
 
-/* Badges */
 .badge {
   padding: 4px 8px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.badge-new {
-  background: rgba(111,143,122,.18);
-  color: #2b7a45;
-}
-
-.badge-existing {
-  background: rgba(47,124,154,.18);
-  color: #1f5f78;
-}
-
-/* =========================================================
-   FOOTER
-========================================================= */
+.badge-new { background: rgba(111,143,122,.18); color: #2b7a45; }
+.badge-existing { background: rgba(47,124,154,.18); color: #1f5f78; }
 
 .footer {
   text-align: center;
@@ -451,12 +385,15 @@ tbody td {
   margin-top: 18px;
 }
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
 @media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
+  .grid { grid-template-columns: 1fr; }
+  #loginView input[type="text"],
+  #loginView input[type="password"],
+  #loginView input[type="email"],
+  #loginView button,
+  #loginView input[type="submit"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 }
