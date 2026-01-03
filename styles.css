@@ -1,7 +1,6 @@
 /* =========================================================
-   GLOBAL RESET / BASE
+   BASE
 ========================================================= */
-
 * { box-sizing: border-box; }
 
 html, body {
@@ -9,7 +8,7 @@ html, body {
   padding: 0;
   background: #f4efe7;
   color: #1f2a24;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 img { max-width: 100%; height: auto; }
@@ -19,7 +18,6 @@ img { max-width: 100%; height: auto; }
 /* =========================================================
    BUTTONS
 ========================================================= */
-
 .btn {
   background: #6f8f7a;
   color: #fff;
@@ -38,149 +36,174 @@ img { max-width: 100%; height: auto; }
 .btn-secondary:hover { background: #cfc9bf; }
 
 /* =========================================================
-   LOGIN PAGE (FORCED CENTER COLUMN)
+   LOGIN MODE (AUTO-DETECTED) — FORCE CENTER COLUMN
+   This triggers when the page contains #loginView OR common
+   login elements/classes. Adjust-free + very hard override.
 ========================================================= */
 
-/* The login "page" wrapper */
-#loginView {
+/* Detect login screen (covers your setup even if IDs differ) */
+body:has(#loginView),
+body:has(.login-card),
+body:has(#loginCard),
+body:has(form#loginForm),
+body:has(.login-form),
+body:has(input[type="password"]) {
+  /* keep background, but allow centering */
+}
+
+/* Force the main wrapper(s) into centered column during login */
+body:has(#loginView) .container,
+body:has(.login-card) .container,
+body:has(#loginCard) .container,
+body:has(form#loginForm) .container,
+body:has(.login-form) .container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Force body layout into a centered column during login */
+body:has(#loginView),
+body:has(.login-card),
+body:has(#loginCard),
+body:has(form#loginForm),
+body:has(.login-form) {
   min-height: 100vh;
-  width: 100%;
-  padding: 56px 16px;
-  background: #f4efe7;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 
-  /* Force a centered column */
+/* Force ANY likely login wrapper into centered column */
+body:has(#loginView) #loginView,
+body:has(.login-card) #loginView,
+body:has(#loginCard) #loginView,
+body:has(form#loginForm) #loginView,
+body:has(.login-form) #loginView,
+
+body:has(.login-card) .login-view,
+body:has(.login-card) .login-page,
+body:has(.login-card) .login-wrap,
+body:has(.login-card) .login-layout,
+body:has(.login-card) .login-container,
+body:has(#loginCard) .login-view,
+body:has(#loginCard) .login-page,
+body:has(#loginCard) .login-wrap,
+body:has(#loginCard) .login-layout,
+body:has(#loginCard) .login-container,
+
+body:has(form#loginForm) .login-view,
+body:has(form#loginForm) .login-page,
+body:has(form#loginForm) .login-wrap,
+body:has(form#loginForm) .login-layout,
+body:has(form#loginForm) .login-container {
+  width: 100% !important;
+  min-height: 100vh !important;
+  padding: 56px 16px !important;
+
+  display: flex !important;
+  flex-direction: column !important;   /* THIS kills the left/right layout */
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+}
+
+/* If your login is using a row/grid wrapper, kill it */
+body:has(.login-card) .row,
+body:has(.login-card) .grid,
+body:has(.login-card) .columns,
+body:has(.login-card) .wrapper,
+body:has(.login-card) .wrap,
+body:has(form#loginForm) .row,
+body:has(form#loginForm) .grid,
+body:has(form#loginForm) .columns,
+body:has(form#loginForm) .wrapper,
+body:has(form#loginForm) .wrap {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 18px !important;
+  gap: 16px !important;
 }
 
-/* If you have any inner row wrappers, force them to column too */
-#loginView .row,
-#loginView .columns,
-#loginView .grid,
-#loginView .wrap,
-#loginView .wrapper,
-#loginView .container,
-#loginView .login-wrap,
-#loginView .login-row,
-#loginView .login-layout {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* Center ALL direct children so they don’t sit side-by-side */
-#loginView > * {
-  width: 100%;
-  max-width: 520px;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-/* --- Top brand block: logo + "Powered by FoxDent" --- */
-#loginView .login-top,
-#loginView .brand-top,
-#loginView .top,
-#loginView header {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto !important;
-
-  display: flex !important;
-  flex-direction: column !important; /* stack like your mock */
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 10px !important;
-
-  text-align: center !important;
-}
-
-/* Make the logo smaller (login page only) */
-#loginView img,
-#loginView img.logo,
-#loginView img#logo,
-#loginView img[alt*="FoxDent" i] {
-  width: 52px !important;
-  height: 52px !important;
-  max-width: 52px !important;
-  max-height: 52px !important;
-  object-fit: contain !important;
-  display: block !important;
-  margin: 0 auto !important;
-}
-
-/* "Powered by FoxDent" line */
-#loginView .powered,
-#loginView .login-powered,
-#loginView .powered-by {
+/* Make the “Powered by FoxDent” + logo centered */
+body:has(.login-card) .powered,
+body:has(form#loginForm) .powered,
+body:has(.login-card) .powered-by,
+body:has(form#loginForm) .powered-by {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(31, 42, 36, .85);
-  line-height: 1.1;
+  color: rgba(31,42,36,.85);
   text-align: center;
 }
-#loginView .foxdent {
-  color: #6f8f7a;
-  font-weight: 900;
+
+.foxdent { color: #6f8f7a; font-weight: 900; }
+
+/* Make the login logo SMALL and centered */
+body:has(.login-card) img,
+body:has(form#loginForm) img,
+body:has(.login-card) img.logo,
+body:has(form#loginForm) img.logo,
+body:has(.login-card) img[alt*="FoxDent" i],
+body:has(form#loginForm) img[alt*="FoxDent" i] {
+  width: 54px !important;
+  height: 54px !important;
+  max-width: 54px !important;
+  max-height: 54px !important;
+  object-fit: contain !important;
+  margin: 0 auto !important;
+  display: block !important;
 }
 
-/* --- The login card itself --- */
-#loginView .login-card,
-#loginView .card,
-#loginView .panel,
-#loginView .box,
-#loginView form {
-  width: 100%;
-  max-width: 420px;
+/* The login card (centered, like your mock) */
+body:has(.login-card) .login-card,
+body:has(#loginCard) #loginCard,
+body:has(form#loginForm) form#loginForm,
+body:has(.login-form) .login-form {
+  width: 100% !important;
+  max-width: 420px !important;
+  background: rgba(255,255,255,.88) !important;
+  border: 2px solid rgba(111,143,122,.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 14px 30px rgba(0,0,0,.10) !important;
+  padding: 22px 22px 18px !important;
+  text-align: center !important;
   margin: 0 auto !important;
 }
 
-/* If your form is inside another div, center that too */
-#loginView .login-card,
-#loginView .panel,
-#loginView .box {
-  background: rgba(255,255,255,.88);
-  border: 2px solid rgba(111,143,122,.18);
-  border-radius: 10px;
-  box-shadow: 0 14px 30px rgba(0,0,0,.10);
-  padding: 22px 22px 18px;
-  text-align: center;
-}
-
-/* Title + subtitle */
-#loginView h1,
-#loginView .login-title {
+/* Titles */
+body:has(.login-card) h1,
+body:has(form#loginForm) h1 {
   margin: 0 0 2px 0;
   font-size: 22px;
   font-weight: 900;
 }
 
-#loginView .login-sub,
-#loginView .subtitle,
-#loginView h2 {
+body:has(.login-card) .login-sub,
+body:has(form#loginForm) .login-sub,
+body:has(.login-card) h2,
+body:has(form#loginForm) h2 {
   margin: 0 0 16px 0;
   font-size: 12px;
   font-weight: 700;
   color: rgba(31,42,36,.75);
 }
 
-/* Labels */
-#loginView label {
+/* Labels + inputs */
+body:has(.login-card) label,
+body:has(form#loginForm) label {
   display: block;
   font-size: 11px;
   font-weight: 800;
   margin: 10px 0 6px;
-  color: rgba(31,42,36,.9);
   text-align: center;
 }
 
-/* Inputs */
-#loginView input[type="text"],
-#loginView input[type="password"],
-#loginView input[type="email"] {
+body:has(.login-card) input[type="text"],
+body:has(.login-card) input[type="password"],
+body:has(form#loginForm) input[type="text"],
+body:has(form#loginForm) input[type="password"] {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -190,19 +213,21 @@ img { max-width: 100%; height: auto; }
   background: rgba(255,255,255,.95);
   font-size: 13px;
   outline: none;
-
   display: block;
   margin: 0 auto;
 }
 
-#loginView input:focus {
+body:has(.login-card) input:focus,
+body:has(form#loginForm) input:focus {
   border-color: rgba(111,143,122,.65);
   box-shadow: 0 0 0 3px rgba(111,143,122,.15);
 }
 
-/* Remember checkbox row */
-#loginView .checkbox,
-#loginView .remember {
+/* Remember row */
+body:has(.login-card) .remember,
+body:has(.login-card) .checkbox,
+body:has(form#loginForm) .remember,
+body:has(form#loginForm) .checkbox {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
@@ -213,9 +238,9 @@ img { max-width: 100%; height: auto; }
 }
 
 /* Continue button */
-#loginView button,
-#loginView .btn-login,
-#loginView input[type="submit"] {
+body:has(.login-card) button,
+body:has(form#loginForm) button,
+body:has(form#loginForm) input[type="submit"] {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -226,19 +251,15 @@ img { max-width: 100%; height: auto; }
   color: #fff;
   font-weight: 900;
   cursor: pointer;
-
   display: block;
   margin: 6px auto 0;
 }
-#loginView button:hover,
-#loginView input[type="submit"]:hover {
-  filter: brightness(.97);
-}
 
-/* Terms text */
-#loginView .login-foot,
-#loginView .terms,
-#loginView small {
+/* Terms */
+body:has(.login-card) .terms,
+body:has(form#loginForm) .terms,
+body:has(.login-card) small,
+body:has(form#loginForm) small {
   display: block;
   margin-top: 14px;
   font-size: 11px;
@@ -247,9 +268,8 @@ img { max-width: 100%; height: auto; }
 }
 
 /* =========================================================
-   DASHBOARD (kept stable)
+   DASHBOARD (your existing portal)
 ========================================================= */
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -264,28 +284,13 @@ img { max-width: 100%; height: auto; }
   margin-bottom: 18px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand-left { display: flex; align-items: center; gap: 12px; }
 .logo { width: 56px; height: 56px; }
-
 .brand-stack { display: flex; flex-direction: column; }
-
 .powered { font-size: 12px; color: #4a5a51; }
-
 .welcome { font-size: 18px; font-weight: 900; }
-
 .brand-sub { font-size: 13px; color: #4a5a51; }
-
 .header-actions { display: flex; gap: 10px; }
 
 .card {
@@ -300,7 +305,6 @@ img { max-width: 100%; height: auto; }
 .card-sub { font-size: 13px; color: #4a5a51; }
 
 .filters { margin-bottom: 18px; }
-
 .filters-row {
   display: flex;
   flex-wrap: wrap;
@@ -309,7 +313,6 @@ img { max-width: 100%; height: auto; }
 }
 
 .field { display: flex; flex-direction: column; gap: 4px; }
-
 .field label { font-size: 12px; font-weight: 700; }
 
 .field input {
@@ -319,7 +322,6 @@ img { max-width: 100%; height: auto; }
 }
 
 .quick { display: flex; gap: 6px; }
-
 .pill {
   background: #eee8de;
   border: 1px solid #d7d0c6;
@@ -341,9 +343,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .chart-card { display: flex; flex-direction: column; }
-
 .chart-wrap { margin-top: 12px; }
-
 .chart-wrap.pie { max-width: 260px; margin: 12px auto 0; }
 
 .legend {
@@ -354,13 +354,7 @@ img { max-width: 100%; height: auto; }
   margin-top: 8px;
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .dot-new { background: #6f8f7a; }
 .dot-return { background: #2f7c9a; }
 
@@ -383,7 +377,6 @@ img { max-width: 100%; height: auto; }
 }
 
 .table-wrap { overflow-x: auto; }
-
 table { width: 100%; border-collapse: collapse; }
 
 thead th {
@@ -401,13 +394,7 @@ tbody td {
 
 .empty { text-align: center; padding: 16px; color: #6b776f; }
 
-.badge {
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
+.badge { padding: 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
 .badge-new { background: rgba(111,143,122,.18); color: #2b7a45; }
 .badge-existing { background: rgba(47,124,154,.18); color: #1f5f78; }
 
@@ -420,14 +407,4 @@ tbody td {
 
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
-
-  #loginView input[type="text"],
-  #loginView input[type="password"],
-  #loginView input[type="email"],
-  #loginView button,
-  #loginView input[type="submit"] {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-  }
 }
