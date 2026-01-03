@@ -476,62 +476,85 @@ tbody tr:nth-child(even){
 }
 /* ---------------- Login Page ---------------- */
 
-.hidden { display: none !important; }
-
-.login-page {
+/* This ensures the login view ALWAYS centers, regardless of other global styles */
+#loginView.login-page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 36px 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* horizontal center */
+  justify-content: center; /* vertical center */
+  gap: 16px;
+  padding: 40px 16px;
+
+  /* soft beige background */
   background: radial-gradient(circle at 15% 0%, #ffffff 0%, #f4efe7 55%, #efe8dd 100%);
 }
 
-.login-top {
-  display: grid;
-  place-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+/* Keep the top/logo area centered */
+#loginView .login-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
 }
 
-.login-logo {
-  width: 74px;
-  height: 74px;
+/* Force the login logo size (prevents global img rules from exploding it) */
+#loginView .login-logo {
+  width: 88px !important;
+  height: 88px !important;
+  max-width: 88px !important;
+  max-height: 88px !important;
   object-fit: contain;
-  border-radius: 16px;
+
+  border-radius: 18px;
   background: #fff;
   border: 1px solid #e3ddd3;
   box-shadow: 0 10px 28px rgba(0,0,0,.10);
   padding: 10px;
+
+  /* prevents any weird inline/img baseline spacing */
+  display: block;
 }
 
-.login-powered {
+#loginView .login-powered {
   font-size: 13px;
   color: #4a5a51;
 }
 
-.login-card {
-  width: min(520px, 100%);
-  background: #fff;
+/* The card is centered and has a clean, simple look */
+#loginView .login-card {
+  width: min(520px, 92vw);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(6px);
   border: 1px solid #e3ddd3;
-  border-radius: 16px;
-  box-shadow: 0 18px 50px rgba(0,0,0,.16);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.14);
   padding: 22px 22px 18px;
+
+  /* centers the card even if other css does something odd */
+  margin: 0 auto;
 }
 
-.login-title {
-  font-size: 22px;
+#loginView .login-title {
+  font-size: 24px;
   margin: 0;
   color: #1f2a24;
   font-weight: 900;
+  text-align: center;
 }
 
-.login-sub {
-  margin: 6px 0 14px;
+#loginView .login-sub {
+  margin: 6px 0 16px;
   color: #4a5a51;
   font-size: 13px;
+  text-align: center;
 }
 
-.login-error {
+/* Error bar */
+#loginView .login-error {
   margin: 10px 0 14px;
   padding: 10px 12px;
   border-radius: 10px;
@@ -540,26 +563,80 @@ tbody tr:nth-child(even){
   font-size: 13px;
 }
 
-.login-form .field input {
-  width: 100%;
+/* Form layout */
+#loginView .login-form {
+  display: grid;
+  gap: 12px;
 }
 
-.btn-login {
+#loginView .login-form .field {
+  display: grid;
+  gap: 6px;
+}
+
+#loginView .login-form label {
+  font-size: 12px;
+  color: #3c4b43;
+  font-weight: 700;
+}
+
+#loginView .login-form input[type="text"],
+#loginView .login-form input[type="password"] {
   width: 100%;
-  margin-top: 10px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid #d7d0c6;
+  outline: none;
+  background: #fff;
+  color: #1f2a24;
+  font-size: 14px;
+}
+
+#loginView .login-form input:focus {
+  border-color: #6f8f7a;
+  box-shadow: 0 0 0 4px rgba(111,143,122,.18);
+}
+
+#loginView .checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #4a5a51;
+  user-select: none;
+}
+
+/* Button */
+#loginView .btn-login {
+  width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
-  font-weight: 800;
+  font-weight: 900;
+  letter-spacing: .2px;
+  background: #6f8f7a;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,.08);
 }
 
-.login-foot {
+#loginView .btn-login:hover {
+  filter: brightness(0.98);
+}
+
+#loginView .btn-login:active {
+  transform: translateY(1px);
+}
+
+#loginView .login-foot {
   margin-top: 14px;
   font-size: 12px;
   color: #6b776f;
   text-align: center;
 }
 
-.linkish {
+#loginView .linkish {
   text-decoration: underline;
   cursor: default;
 }
+
+/* Utility */
+.hidden { display: none !important; }
