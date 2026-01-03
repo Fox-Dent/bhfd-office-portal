@@ -21,6 +21,7 @@ const els = {
 
   // dashboard actions
   btnLogout: document.getElementById("btnLogout"),
+  btnLogoutSide: document.getElementById("btnLogoutSide"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
@@ -32,13 +33,23 @@ const els = {
   newMeta: document.getElementById("newMeta"),
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
+
+  // sidebar
+  sidebar: document.getElementById("sidebar"),
+  btnMenu: document.getElementById("btnMenu"),
+  sidebarOverlay: document.getElementById("sidebarOverlay"),
+
+  // routes
+  routeDashboard: document.getElementById("route-dashboard"),
+  routeAnalytics: document.getElementById("route-analytics"),
+  routeCommunication: document.getElementById("route-communication"),
 };
 
 let cachedRows = [];
 let dashboardWired = false;
 
+/* ===================== UI MODE ===================== */
 function setMode(mode) {
-  // mode: "login" | "app"
   document.body.classList.remove("mode-login", "mode-app");
   document.body.classList.add(mode === "login" ? "mode-login" : "mode-app");
 }
@@ -49,18 +60,75 @@ function showLogin() {
   els.loginView.classList.remove("hidden");
   setLoginError("");
   setStatus("Not connected", "");
+  closeSidebar();
   setTimeout(() => {
     if (els.loginUser.value) els.loginPass.focus();
     else els.loginUser.focus();
   }, 0);
 }
 
-function showDashboard() {
+function showAppShell() {
   setMode("app");
-  els.loginView.classList.add("hidden");      // ✅ fully removed from layout
+  els.loginView.classList.add("hidden");
   els.dashboardView.classList.remove("hidden");
 }
 
+/* ===================== SIDEBAR ===================== */
+function openSidebar() {
+  els.sidebar.classList.add("open");
+  els.btnMenu.setAttribute("aria-expanded", "true");
+  // overlay only matters when sidebar open (especially on mobile)
+  els.sidebarOverlay.classList.remove("hidden");
+  els.sidebarOverlay.setAttribute("aria-hidden", "false");
+}
+
+function closeSidebar() {
+  els.sidebar.classList.remove("open");
+  els.btnMenu.setAttribute("aria-expanded", "false");
+  els.sidebarOverlay.classList.add("hidden");
+  els.sidebarOverlay.setAttribute("aria-hidden", "true");
+}
+
+function toggleSidebar() {
+  if (els.sidebar.classList.contains("open")) closeSidebar();
+  else openSidebar();
+}
+
+/* ===================== ROUTING ===================== */
+function setActiveNav(route) {
+  document.querySelectorAll(".nav-item").forEach((a) => {
+    a.classList.toggle("active", a.dataset.route === route);
+  });
+}
+
+function showRoute(route) {
+  // Hide all
+  els.routeDashboard.classList.add("hidden");
+  els.routeAnalytics.classList.add("hidden");
+  els.routeCommunication.classList.add("hidden");
+
+  if (route === "analytics") els.routeAnalytics.classList.remove("hidden");
+  else if (route === "communication") els.routeCommunication.classList.remove("hidden");
+  else els.routeDashboard.classList.remove("hidden"); // default
+
+  setActiveNav(route);
+}
+
+function currentRoute() {
+  const h = (location.hash || "").toLowerCase();
+  if (h.startsWith("#/analytics")) return "analytics";
+  if (h.startsWith("#/communication")) return "communication";
+  return "dashboard";
+}
+
+function onRouteChange() {
+  const r = currentRoute();
+  showRoute(r);
+  // nice behavior: close menu after selecting route
+  closeSidebar();
+}
+
+/* ===================== HELPERS ===================== */
 function setLoginError(msg) {
   els.loginError.textContent = msg || "";
   els.loginError.classList.toggle("hidden", !msg);
@@ -116,8 +184,7 @@ function clearAuth() {
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-/* ---------------- API ---------------- */
-
+/* ===================== API ===================== */
 async function api(path) {
   if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
 
@@ -141,8 +208,7 @@ async function api(path) {
   return data;
 }
 
-/* ---------------- Render helpers ---------------- */
-
+/* ===================== RENDER HELPERS ===================== */
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
   if (x === "adult_cleaning") return "Adult Cleaning";
@@ -347,8 +413,7 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
-/* ---------------- Load ---------------- */
-
+/* ===================== LOAD ===================== */
 async function loadAll() {
   setStatus("Loading…", "");
   try {
@@ -408,7 +473,20 @@ function wireDashboardOnce() {
   els.searchInput.addEventListener("input", () => renderTable(cachedRows));
 }
 
-/* ---------------- Events ---------------- */
+/* ===================== LOGOUT ===================== */
+function doLogout() {
+  clearAuth();
+  showLogin();
+  location.hash = "#/dashboard";
+}
+
+/* ===================== EVENTS ===================== */
+els.btnMenu?.addEventListener("click", toggleSidebar);
+els.sidebarOverlay?.addEventListener("click", closeSidebar);
+window.addEventListener("hashchange", onRouteChange);
+
+els.btnLogout?.addEventListener("click", doLogout);
+els.btnLogoutSide?.addEventListener("click", doLogout);
 
 els.loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -430,13 +508,11 @@ els.loginForm.addEventListener("submit", async (e) => {
     const candidate = makeBasicAuth(user, pass);
     AUTH_HEADER = candidate;
 
-    // Validate credentials with a quick call
+    // Validate credentials
     await api(`/office/bookings?limit=1`);
-
     rememberAuthIfWanted(candidate, remember);
 
-    // Switch to dashboard mode (this also fully hides login view)
-    showDashboard();
+    showAppShell();
 
     // default range
     const t = todayYYYYMMDD();
@@ -444,6 +520,11 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
+
+    // route init
+    if (!location.hash) location.hash = "#/dashboard";
+    onRouteChange();
+
     await loadAll();
   } catch (err) {
     clearAuth();
@@ -455,25 +536,21 @@ els.loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-els.btnLogout.addEventListener("click", () => {
-  clearAuth();
-  showLogin();
-});
-
-/* ---------------- Init ---------------- */
-
+/* ===================== INIT ===================== */
 (function init() {
   const remembered = loadRememberedAuth();
   if (remembered) {
     AUTH_HEADER = remembered;
-
-    showDashboard();
+    showAppShell();
 
     const t = todayYYYYMMDD();
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
+
+    if (!location.hash) location.hash = "#/dashboard";
+    onRouteChange();
 
     loadAll().catch(() => {
       clearAuth();
