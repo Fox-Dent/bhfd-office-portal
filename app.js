@@ -1,23 +1,21 @@
 /**
  * BHFD Office Portal
- * - Calls Office API Worker:
- *    GET /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD homologated to DATE BOOKED (created_at)
+ * - Calls Office API Worker B:
+ *    GET /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD&limit=50
  *    GET /office/analytics?start=YYYY-MM-DD&end=YYYY-MM-DD
- *
- * IMPORTANT:
- * - Set OFFICE_API_BASE to your Office API Worker URL.
- * - Login uses Basic Auth (prompt).
- * - Date range is based on DATE BOOKED (created_at), not appointment_date.
  */
 
-const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // <-- your Office API Worker
+const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // <-- keep your Worker B URL
 
 let AUTH_HEADER = null;
 let lineChart = null;
 let pieChart = null;
 
+const AUTH_STORAGE_KEY = "bhfd_office_auth_basic";
+
 const els = {
   btnLogin: document.getElementById("btnLogin"),
+  btnLogout: document.getElementById("btnLogout"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
   statusText: document.getElementById("statusText"),
@@ -27,6 +25,16 @@ const els = {
   newMeta: document.getElementById("newMeta"),
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
+
+  // modal
+  loginModal: document.getElementById("loginModal"),
+  loginUser: document.getElementById("loginUser"),
+  loginPass: document.getElementById("loginPass"),
+  loginRemember: document.getElementById("loginRemember"),
+  loginError: document.getElementById("loginError"),
+  btnCloseLogin: document.getElementById("btnCloseLogin"),
+  btnCancelLogin: document.getElementById("btnCancelLogin"),
+  btnSubmitLogin: document.getElementById("btnSubmitLogin"),
 };
 
 let cachedRows = []; // for search + CSV
@@ -35,6 +43,11 @@ function setStatus(text, mode = "") {
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
+}
+
+function setConnectedUI(isConnected) {
+  els.btnLogin.classList.toggle("hidden", isConnected);
+  els.btnLogout.classList.toggle("hidden", !isConnected);
 }
 
 function todayYYYYMMDD() {
@@ -61,19 +74,64 @@ function monthStart(dateStr) {
   return `${y}-${m}-01`;
 }
 
-function promptLogin() {
-  const user = prompt("Office user:");
-  const pass = prompt("Office password:");
-  if (!user || !pass) return null;
+/* ---------------- Modal helpers ---------------- */
+
+function showLoginModal(prefillUser = "") {
+  els.loginError.classList.add("hidden");
+  els.loginError.textContent = "";
+  els.loginUser.value = prefillUser || "";
+  els.loginPass.value = "";
+  els.loginRemember.checked = false;
+
+  els.loginModal.classList.remove("hidden");
+  els.loginModal.setAttribute("aria-hidden", "false");
+
+  // focus username (or password if username already filled)
+  setTimeout(() => {
+    if (els.loginUser.value) els.loginPass.focus();
+    else els.loginUser.focus();
+  }, 0);
+}
+
+function hideLoginModal() {
+  els.loginModal.classList.add("hidden");
+  els.loginModal.setAttribute("aria-hidden", "true");
+}
+
+function setLoginError(msg) {
+  els.loginError.textContent = msg || "";
+  els.loginError.classList.toggle("hidden", !msg);
+}
+
+function makeBasicAuth(user, pass) {
   const token = btoa(`${user}:${pass}`);
   return `Basic ${token}`;
 }
 
-async function api(path) {
-  if (!AUTH_HEADER) {
-    AUTH_HEADER = promptLogin();
-    if (!AUTH_HEADER) throw new Error("Login cancelled.");
+function rememberAuthIfWanted(authHeader, remember) {
+  if (remember) {
+    sessionStorage.setItem(AUTH_STORAGE_KEY, authHeader);
+  } else {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
   }
+}
+
+function loadRememberedAuth() {
+  const v = sessionStorage.getItem(AUTH_STORAGE_KEY);
+  return v && v.startsWith("Basic ") ? v : null;
+}
+
+function clearAuth() {
+  AUTH_HEADER = null;
+  sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  setConnectedUI(false);
+  setStatus("Not connected", "");
+}
+
+/* ---------------- API ---------------- */
+
+async function api(path) {
+  if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
 
   const res = await fetch(`${OFFICE_API_BASE}${path}`, {
     method: "GET",
@@ -84,8 +142,8 @@ async function api(path) {
   });
 
   if (res.status === 401) {
-    AUTH_HEADER = null;
-    throw new Error("Unauthorized (wrong credentials).");
+    clearAuth();
+    throw new Error("Unauthorized (wrong credentials). Please login again.");
   }
 
   const data = await res.json().catch(() => null);
@@ -94,6 +152,8 @@ async function api(path) {
   }
   return data;
 }
+
+/* ---------------- UI render helpers ---------------- */
 
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
@@ -105,12 +165,7 @@ function apptTypeLabel(t) {
 }
 
 function insuranceLabel(row) {
-  const ins =
-    row.insurance ||
-    row.insurance_carrier ||
-    row.insCarrier ||
-    row.carrier ||
-    "";
+  const ins = row.insurance || row.insurance_carrier || row.insCarrier || row.carrier || "";
   const noIns = row.no_insurance ?? row.noInsurance ?? null;
 
   if (String(ins).trim()) return String(ins).trim();
@@ -124,6 +179,51 @@ function statusBadge(status) {
   return `<span class="badge badge-existing">Existing</span>`;
 }
 
+function renderTable(rows) {
+  cachedRows = Array.isArray(rows) ? rows : [];
+
+  const q = (els.searchInput.value || "").trim().toLowerCase();
+  const filtered = !q
+    ? cachedRows
+    : cachedRows.filter((r) => {
+        const blob = [
+          r.patient_first, r.patient_last, r.patient_status,
+          r.appointment_date, r.appointment_time, r.appointment_type,
+          r.insurance, r.insurance_carrier, r.carrier, r.created_at
+        ].map((x) => String(x || "").toLowerCase()).join(" ");
+        return blob.includes(q);
+      });
+
+  if (!filtered.length) {
+    els.bookingsBody.innerHTML = `<tr><td colspan="8" class="empty">No matching bookings.</td></tr>`;
+    return;
+  }
+
+  els.bookingsBody.innerHTML = filtered.map((r) => {
+    const booked = String(r.created_at || "").slice(0, 10);
+    const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
+    const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
+    const pStatus = statusBadge(r.patient_status);
+    const apptDate = r.appointment_date || "—";
+    const apptTime = r.appointment_time || "—";
+    const type = apptTypeLabel(r.appointment_type);
+    const ins = insuranceLabel(r);
+
+    return `
+      <tr>
+        <td>${escapeHtml(booked || "—")}</td>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(dob)}</td>
+        <td>${pStatus}</td>
+        <td>${escapeHtml(apptDate)}</td>
+        <td>${escapeHtml(apptTime)}</td>
+        <td>${escapeHtml(type)}</td>
+        <td>${escapeHtml(ins)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
 function escapeHtml(s) {
   return String(s || "")
     .replace(/&/g, "&amp;")
@@ -133,69 +233,8 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * TABLE: shows Date Booked from created_at (YYYY-MM-DD)
- */
-function renderTable(rows) {
-  cachedRows = Array.isArray(rows) ? rows : [];
-
-  const q = (els.searchInput.value || "").trim().toLowerCase();
-  const filtered = !q
-    ? cachedRows
-    : cachedRows.filter((r) => {
-        const blob = [
-          r.patient_first,
-          r.patient_last,
-          r.patient_status,
-          r.appointment_date,
-          r.appointment_time,
-          r.appointment_type,
-          r.insurance,
-          r.insurance_carrier,
-          r.carrier,
-          r.created_at,
-        ]
-          .map((x) => String(x || "").toLowerCase())
-          .join(" ");
-        return blob.includes(q);
-      });
-
-  if (!filtered.length) {
-    els.bookingsBody.innerHTML = `<tr><td colspan="8" class="empty">No matching bookings.</td></tr>`;
-    return;
-  }
-
-  els.bookingsBody.innerHTML = filtered
-    .map((r) => {
-      const booked = String(r.created_at || "").slice(0, 10); // ✅ DATE BOOKED
-      const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
-      const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
-      const pStatus = statusBadge(r.patient_status);
-      const apptDate = r.appointment_date || "—";
-      const apptTime = r.appointment_time || "—";
-      const type = apptTypeLabel(r.appointment_type);
-      const ins = insuranceLabel(r);
-
-      return `
-        <tr>
-          <td>${escapeHtml(booked || "—")}</td>
-          <td>${escapeHtml(name)}</td>
-          <td>${escapeHtml(dob)}</td>
-          <td>${pStatus}</td>
-          <td>${escapeHtml(apptDate)}</td>
-          <td>${escapeHtml(apptTime)}</td>
-          <td>${escapeHtml(type)}</td>
-          <td>${escapeHtml(ins)}</td>
-        </tr>
-      `;
-    })
-    .join("");
-}
-
-/**
- * LINE CHART: counts bookings per day by DATE BOOKED (created_at)
- */
 function buildLineSeries(bookings, start, end) {
+  // ✅ Counts bookings per day using CREATED_AT date (date booked), matching your new range behavior
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -211,9 +250,9 @@ function buildLineSeries(bookings, start, end) {
   const idx = new Map(labels.map((d, i) => [d, i]));
 
   for (const b of bookings || []) {
-    const d = String(b.created_at || "").slice(0, 10); // ✅ DATE BOOKED
-    if (!d || !idx.has(d)) continue;
-    counts[idx.get(d)] += 1;
+    const bookedDay = String(b.created_at || "").slice(0, 10);
+    if (!bookedDay || !idx.has(bookedDay)) continue;
+    counts[idx.get(bookedDay)] += 1;
   }
 
   return { labels, counts };
@@ -231,38 +270,36 @@ function renderLineChart(labels, counts) {
     type: "line",
     data: {
       labels,
-      datasets: [
-        {
-          label: "Bookings (Date Booked)",
-          data: counts,
-          borderColor: "#6f8f7a",
-          backgroundColor: "rgba(111,143,122,.15)",
-          pointBackgroundColor: "#6f8f7a",
-          pointRadius: 3,
-          tension: 0.25,
-          fill: true,
-        },
-      ],
+      datasets: [{
+        label: "Bookings (Date Booked)",
+        data: counts,
+        borderColor: "#6f8f7a",
+        backgroundColor: "rgba(111,143,122,.15)",
+        pointBackgroundColor: "#6f8f7a",
+        pointRadius: 3,
+        tension: 0.25,
+        fill: true,
+      }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true },
+        tooltip: { enabled: true }
       },
       scales: {
         x: {
           ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
-          grid: { color: "rgba(0,0,0,.04)" },
+          grid: { color: "rgba(0,0,0,.04)" }
         },
         y: {
           beginAtZero: true,
           ticks: { precision: 0 },
-          grid: { color: "rgba(0,0,0,.04)" },
-        },
-      },
-    },
+          grid: { color: "rgba(0,0,0,.04)" }
+        }
+      }
+    }
   });
 }
 
@@ -278,28 +315,20 @@ function renderPieChart(newCount, returningCount) {
     type: "pie",
     data: {
       labels: ["New Patients", "Returning Patients"],
-      datasets: [
-        {
-          data: [totalNew, totalRet],
-          backgroundColor: ["#6f8f7a", "#2f7c9a"],
-          borderColor: "rgba(255,255,255,.9)",
-          borderWidth: 2,
-        },
-      ],
+      datasets: [{
+        data: [totalNew, totalRet],
+        backgroundColor: ["#6f8f7a", "#2f7c9a"],
+        borderColor: "rgba(255,255,255,.9)",
+        borderWidth: 2
+      }]
     },
     options: {
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true },
-      },
-    },
+        tooltip: { enabled: true }
+      }
+    }
   });
-}
-
-function csvEscape(v) {
-  const s = String(v ?? "");
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
 }
 
 function exportCsv() {
@@ -308,19 +337,10 @@ function exportCsv() {
     ? cachedRows
     : cachedRows.filter((r) => {
         const blob = [
-          r.patient_first,
-          r.patient_last,
-          r.patient_status,
-          r.appointment_date,
-          r.appointment_time,
-          r.appointment_type,
-          r.insurance,
-          r.insurance_carrier,
-          r.carrier,
-          r.created_at,
-        ]
-          .map((x) => String(x || "").toLowerCase())
-          .join(" ");
+          r.patient_first, r.patient_last, r.patient_status,
+          r.appointment_date, r.appointment_time, r.appointment_type,
+          r.insurance, r.insurance_carrier, r.carrier, r.created_at
+        ].map((x) => String(x || "").toLowerCase()).join(" ");
         return blob.includes(q);
       });
 
@@ -362,36 +382,37 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/* ---------------- Load ---------------- */
+
 async function loadAll() {
   setStatus("Loading…", "");
   try {
     const start = (els.startDate.value || "").trim();
     const end = (els.endDate.value || "").trim();
-    const qs =
-      start && end
-        ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
-        : "";
+    const qs = (start && end) ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` : "";
 
     const [bookings, analytics] = await Promise.all([
       api(`/office/bookings${(qs ? qs + "&" : "?")}limit=250`),
       api(`/office/analytics${qs}`),
     ]);
 
-    // Table
     renderTable(bookings.results || []);
 
-    // Line chart (date booked)
     const series = buildLineSeries(bookings.results || [], start || null, end || null);
     renderLineChart(series.labels, series.counts);
 
-    // Pie (status breakdown in the same filtered range)
-    const newCount = Number(analytics?.byStatus?.find?.((x) => x.key === "new")?.count || 0);
-    const existingCount = Number(
-      analytics?.byStatus?.find?.((x) => x.key === "existing")?.count || 0
-    );
+    const newCount = Number(analytics?.byStatus?.find?.(x => x.key === "new")?.count || 0);
+    const existingCount = Number(analytics?.byStatus?.find?.(x => x.key === "existing")?.count || 0);
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
+    setConnectedUI(true);
   } catch (e) {
     setStatus(String(e), "err");
   }
@@ -416,13 +437,73 @@ function applyRange(mode) {
   loadAll();
 }
 
-/* ---------- Events ---------- */
-els.btnLogin.addEventListener("click", () => {
-  AUTH_HEADER = null;
+/* ---------------- Modal events ---------------- */
+
+els.btnLogin.addEventListener("click", () => showLoginModal());
+
+els.btnLogout.addEventListener("click", () => {
+  clearAuth();
   setStatus("Not connected", "");
-  loadAll();
 });
 
+els.btnCloseLogin.addEventListener("click", () => hideLoginModal());
+els.btnCancelLogin.addEventListener("click", () => hideLoginModal());
+
+// click backdrop closes
+els.loginModal.addEventListener("click", (e) => {
+  const t = e.target;
+  if (t && t.dataset && t.dataset.close === "1") hideLoginModal();
+});
+
+// ESC closes
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !els.loginModal.classList.contains("hidden")) {
+    hideLoginModal();
+  }
+});
+
+// Enter submits when modal open
+els.loginPass.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") els.btnSubmitLogin.click();
+});
+els.loginUser.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") els.btnSubmitLogin.click();
+});
+
+els.btnSubmitLogin.addEventListener("click", async () => {
+  const user = (els.loginUser.value || "").trim();
+  const pass = (els.loginPass.value || "").trim();
+  const remember = !!els.loginRemember.checked;
+
+  if (!user || !pass) {
+    setLoginError("Please enter both username and password.");
+    return;
+  }
+
+  const candidate = makeBasicAuth(user, pass);
+
+  // Try a small authenticated request before accepting
+  try {
+    AUTH_HEADER = candidate;
+    setStatus("Connecting…", "");
+    setLoginError("");
+
+    // ping bookings quickly
+    await api(`/office/bookings?limit=1`);
+    rememberAuthIfWanted(candidate, remember);
+
+    hideLoginModal();
+    setConnectedUI(true);
+    await loadAll();
+  } catch (err) {
+    AUTH_HEADER = null;
+    setConnectedUI(false);
+    setStatus("Not connected", "");
+    setLoginError(String(err));
+  }
+});
+
+/* ---------- Other events ---------- */
 els.btnRefresh.addEventListener("click", () => loadAll());
 els.btnExport.addEventListener("click", () => exportCsv());
 els.searchInput.addEventListener("input", () => renderTable(cachedRows));
@@ -431,9 +512,20 @@ document.querySelectorAll(".pill").forEach((b) => {
   b.addEventListener("click", () => applyRange(b.dataset.range));
 });
 
-/* ---------- Default dates ---------- */
+/* ---------- Init ---------- */
 (function init() {
   const t = todayYYYYMMDD();
   els.endDate.value = t;
-  els.startDate.value = addDays(t, -29); // default last 30
+  els.startDate.value = addDays(t, -29);
+
+  // try restore auth from session
+  const remembered = loadRememberedAuth();
+  if (remembered) {
+    AUTH_HEADER = remembered;
+    setConnectedUI(true);
+    loadAll();
+  } else {
+    setConnectedUI(false);
+    setStatus("Not connected", "");
+  }
 })();
