@@ -1,17 +1,33 @@
-const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // Worker B URL
+/**
+ * BHFD Office Portal (FoxDent)
+ *
+ * UI:
+ *  - Login page:  <main id="loginView">...</main>
+ *  - Dashboard:   <div id="dashboardView">...</div>
+ *
+ * API (Office API Worker B):
+ *  - GET  /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD&limit=250
+ *  - GET  /office/analytics?start=YYYY-MM-DD&end=YYYY-MM-DD
+ *
+ * NOTES:
+ *  - Date range filters are based on DATE BOOKED (created_at), not appointment_date.
+ *  - Auth uses Basic Auth. If "Remember" is checked, it is stored in localStorage.
+ */
+
+const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // <-- your Office API worker URL
 
 let AUTH_HEADER = null;
 let lineChart = null;
 let pieChart = null;
 
-const AUTH_STORAGE_KEY = "bhfd_office_auth_basic";
+const STORAGE_KEY = "foxdent_office_basic_auth_v1";
 
 const els = {
-  // views
+  // Views
   loginView: document.getElementById("loginView"),
   dashboardView: document.getElementById("dashboardView"),
 
-  // login
+  // Login form
   loginForm: document.getElementById("loginForm"),
   loginUser: document.getElementById("loginUser"),
   loginPass: document.getElementById("loginPass"),
@@ -19,12 +35,10 @@ const els = {
   loginError: document.getElementById("loginError"),
   btnSubmitLogin: document.getElementById("btnSubmitLogin"),
 
-  // dashboard actions
+  // Dashboard controls
   btnLogout: document.getElementById("btnLogout"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
-
-  // dashboard fields
   statusText: document.getElementById("statusText"),
   startDate: document.getElementById("startDate"),
   endDate: document.getElementById("endDate"),
@@ -34,34 +48,39 @@ const els = {
   searchInput: document.getElementById("searchInput"),
 };
 
-let cachedRows = [];
+let cachedRows = []; // used for search + CSV export
+
+/* ---------------- View helpers ---------------- */
 
 function showLogin() {
-  els.dashboardView.classList.add("hidden");
-  els.loginView.classList.remove("hidden");
-  setLoginError("");
-  setStatus("Not connected", "");
-  setTimeout(() => {
-    if (els.loginUser.value) els.loginPass.focus();
-    else els.loginUser.focus();
-  }, 0);
+  els.loginView?.classList.remove("hidden");
+  els.dashboardView?.classList.add("hidden");
 }
 
 function showDashboard() {
-  els.loginView.classList.add("hidden");
-  els.dashboardView.classList.remove("hidden");
+  els.loginView?.classList.add("hidden");
+  els.dashboardView?.classList.remove("hidden");
 }
 
-function setLoginError(msg) {
-  els.loginError.textContent = msg || "";
-  els.loginError.classList.toggle("hidden", !msg);
+function setLoginError(text) {
+  if (!els.loginError) return;
+  if (!text) {
+    els.loginError.textContent = "";
+    els.loginError.classList.add("hidden");
+    return;
+  }
+  els.loginError.textContent = text;
+  els.loginError.classList.remove("hidden");
 }
 
 function setStatus(text, mode = "") {
+  if (!els.statusText) return;
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
 }
+
+/* ---------------- Date helpers ---------------- */
 
 function todayYYYYMMDD() {
   const d = new Date();
@@ -87,30 +106,53 @@ function monthStart(dateStr) {
   return `${y}-${m}-01`;
 }
 
-function makeBasicAuth(user, pass) {
-  const token = btoa(`${user}:${pass}`);
-  return `Basic ${token}`;
+function ymdFromIso(iso) {
+  // created_at is ISO like 2026-01-03T17:53:21.337Z -> take YYYY-MM-DD
+  return String(iso || "").slice(0, 10);
 }
 
-function loadRememberedAuth() {
-  const v = sessionStorage.getItem(AUTH_STORAGE_KEY);
-  return v && v.startsWith("Basic ") ? v : null;
+/* ---------------- Auth helpers ---------------- */
+
+function basicAuthHeader(user, pass) {
+  const u = String(user || "").trim();
+  const p = String(pass || "");
+  if (!u || !p) return null;
+  return `Basic ${btoa(`${u}:${p}`)}`;
 }
 
-function rememberAuthIfWanted(authHeader, remember) {
-  if (remember) sessionStorage.setItem(AUTH_STORAGE_KEY, authHeader);
-  else sessionStorage.removeItem(AUTH_STORAGE_KEY);
+function saveAuthIfRemember(remember, header) {
+  try {
+    if (!remember) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(STORAGE_KEY, header);
+  } catch {
+    // ignore storage errors
+  }
 }
 
-function clearAuth() {
-  AUTH_HEADER = null;
-  sessionStorage.removeItem(AUTH_STORAGE_KEY);
+function loadSavedAuth() {
+  try {
+    const h = localStorage.getItem(STORAGE_KEY);
+    return h && h.startsWith("Basic ") ? h : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearSavedAuth() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 /* ---------------- API ---------------- */
 
-async function api(path) {
-  if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
+async function apiGet(path) {
+  if (!AUTH_HEADER) throw new Error("Not authenticated.");
 
   const res = await fetch(`${OFFICE_API_BASE}${path}`, {
     method: "GET",
@@ -121,7 +163,6 @@ async function api(path) {
   });
 
   if (res.status === 401) {
-    clearAuth();
     throw new Error("Unauthorized (wrong credentials).");
   }
 
@@ -132,7 +173,14 @@ async function api(path) {
   return data;
 }
 
-/* ---------------- Render helpers ---------------- */
+async function verifyAuth() {
+  // hits a simple endpoint (you already confirmed /health works)
+  // If your worker doesn't require auth for /health, you can swap to /office/bookings?limit=1
+  // We'll use /office/bookings?limit=1 so auth is definitely tested.
+  await apiGet(`/office/bookings?limit=1`);
+}
+
+/* ---------------- Formatting helpers ---------------- */
 
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
@@ -144,8 +192,15 @@ function apptTypeLabel(t) {
 }
 
 function insuranceLabel(row) {
-  const ins = row.insurance || row.insurance_carrier || row.insCarrier || row.carrier || "";
+  const ins =
+    row.insurance ||
+    row.insurance_carrier ||
+    row.insCarrier ||
+    row.carrier ||
+    "";
+
   const noIns = row.no_insurance ?? row.noInsurance ?? null;
+
   if (String(ins).trim()) return String(ins).trim();
   if (noIns === true) return "Self-Pay";
   return "—";
@@ -166,18 +221,23 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+/* ---------------- Table ---------------- */
+
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
-  const q = (els.searchInput.value || "").trim().toLowerCase();
+  const q = (els.searchInput?.value || "").trim().toLowerCase();
   const filtered = !q
     ? cachedRows
     : cachedRows.filter((r) => {
         const blob = [
           r.patient_first, r.patient_last, r.patient_status,
           r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier, r.created_at
-        ].map((x) => String(x || "").toLowerCase()).join(" ");
+          r.insurance, r.insurance_carrier, r.carrier,
+          r.created_at
+        ]
+          .map((x) => String(x || "").toLowerCase())
+          .join(" ");
         return blob.includes(q);
       });
 
@@ -186,33 +246,43 @@ function renderTable(rows) {
     return;
   }
 
-  els.bookingsBody.innerHTML = filtered.map((r) => {
-    const booked = String(r.created_at || "").slice(0, 10);
-    const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
-    const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
-    const pStatus = statusBadge(r.patient_status);
-    const apptDate = r.appointment_date || "—";
-    const apptTime = r.appointment_time || "—";
-    const type = apptTypeLabel(r.appointment_type);
-    const ins = insuranceLabel(r);
+  // Sort newest booked first
+  const sorted = [...filtered].sort((a, b) => {
+    const aa = String(a.created_at || "");
+    const bb = String(b.created_at || "");
+    return bb.localeCompare(aa);
+  });
 
-    return `
-      <tr>
-        <td>${escapeHtml(booked || "—")}</td>
-        <td>${escapeHtml(name)}</td>
-        <td>${escapeHtml(dob)}</td>
-        <td>${pStatus}</td>
-        <td>${escapeHtml(apptDate)}</td>
-        <td>${escapeHtml(apptTime)}</td>
-        <td>${escapeHtml(type)}</td>
-        <td>${escapeHtml(ins)}</td>
-      </tr>
-    `;
-  }).join("");
+  els.bookingsBody.innerHTML = sorted
+    .map((r) => {
+      const booked = ymdFromIso(r.created_at);
+      const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
+      const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
+      const pStatus = statusBadge(r.patient_status);
+      const apptDate = r.appointment_date || "—";
+      const apptTime = r.appointment_time || "—";
+      const type = apptTypeLabel(r.appointment_type);
+      const ins = insuranceLabel(r);
+
+      return `
+        <tr>
+          <td>${escapeHtml(booked || "—")}</td>
+          <td>${escapeHtml(name)}</td>
+          <td>${escapeHtml(dob)}</td>
+          <td>${pStatus}</td>
+          <td>${escapeHtml(apptDate)}</td>
+          <td>${escapeHtml(apptTime)}</td>
+          <td>${escapeHtml(type)}</td>
+          <td>${escapeHtml(ins)}</td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
-function buildLineSeries(bookings, start, end) {
-  // ✅ book-count by Date Booked (created_at)
+/* ---------------- Charts (based on DATE BOOKED) ---------------- */
+
+function buildLineSeriesByBooked(bookings, start, end) {
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -228,7 +298,7 @@ function buildLineSeries(bookings, start, end) {
   const idx = new Map(labels.map((d, i) => [d, i]));
 
   for (const b of bookings || []) {
-    const bookedDay = String(b.created_at || "").slice(0, 10);
+    const bookedDay = ymdFromIso(b.created_at);
     if (!bookedDay || !idx.has(bookedDay)) continue;
     counts[idx.get(bookedDay)] += 1;
   }
@@ -238,9 +308,10 @@ function buildLineSeries(bookings, start, end) {
 
 function renderLineChart(labels, counts) {
   const ctx = document.getElementById("lineChart");
+  if (!ctx) return;
 
   const total = counts.reduce((a, b) => a + b, 0);
-  els.scheduledMeta.textContent = `${total} total booked in selected range`;
+  if (els.scheduledMeta) els.scheduledMeta.textContent = `${total} total booked in selected range`;
 
   if (lineChart) lineChart.destroy();
 
@@ -248,34 +319,48 @@ function renderLineChart(labels, counts) {
     type: "line",
     data: {
       labels,
-      datasets: [{
-        label: "Bookings (Date Booked)",
-        data: counts,
-        borderColor: "#6f8f7a",
-        backgroundColor: "rgba(111,143,122,.15)",
-        pointBackgroundColor: "#6f8f7a",
-        pointRadius: 3,
-        tension: 0.25,
-        fill: true,
-      }]
+      datasets: [
+        {
+          label: "Booked Appointments",
+          data: counts,
+          borderColor: "#6f8f7a",
+          backgroundColor: "rgba(111,143,122,.15)",
+          pointBackgroundColor: "#6f8f7a",
+          pointRadius: 3,
+          tension: 0.25,
+          fill: true,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true },
+      },
       scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 10 }, grid: { color: "rgba(0,0,0,.04)" } },
-        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "rgba(0,0,0,.04)" } },
-      }
-    }
+        x: {
+          ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
+          grid: { color: "rgba(0,0,0,.04)" },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          grid: { color: "rgba(0,0,0,.04)" },
+        },
+      },
+    },
   });
 }
 
 function renderPieChart(newCount, returningCount) {
   const ctx = document.getElementById("pieChart");
+  if (!ctx) return;
+
   const totalNew = Number(newCount || 0);
   const totalRet = Number(returningCount || 0);
-  els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
+  if (els.newMeta) els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
 
   if (pieChart) pieChart.destroy();
 
@@ -283,33 +368,66 @@ function renderPieChart(newCount, returningCount) {
     type: "pie",
     data: {
       labels: ["New Patients", "Returning Patients"],
-      datasets: [{
-        data: [totalNew, totalRet],
-        backgroundColor: ["#6f8f7a", "#2f7c9a"],
-        borderColor: "rgba(255,255,255,.9)",
-        borderWidth: 2
-      }]
+      datasets: [
+        {
+          data: [totalNew, totalRet],
+          backgroundColor: ["#6f8f7a", "#2f7c9a"],
+          borderColor: "rgba(255,255,255,.9)",
+          borderWidth: 2,
+        },
+      ],
     },
-    options: { plugins: { legend: { display: false } } }
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true },
+      },
+    },
   });
 }
 
-function exportCsv() {
-  const q = (els.searchInput.value || "").trim().toLowerCase();
-  const rows = !q ? cachedRows : cachedRows.filter((r) => {
-    const blob = [
-      r.patient_first, r.patient_last, r.patient_status,
-      r.appointment_date, r.appointment_time, r.appointment_type,
-      r.insurance, r.insurance_carrier, r.carrier, r.created_at
-    ].map((x) => String(x || "").toLowerCase()).join(" ");
-    return blob.includes(q);
-  });
+/* ---------------- CSV Export ---------------- */
 
-  const header = ["Date Booked","Patient Name","Patient DOB","Patient Status","Appt Date","Appt Time","Appointment Type","Insurance"];
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportCsv() {
+  const q = (els.searchInput?.value || "").trim().toLowerCase();
+  const rows = !q
+    ? cachedRows
+    : cachedRows.filter((r) => {
+        const blob = [
+          r.patient_first, r.patient_last, r.patient_status,
+          r.appointment_date, r.appointment_time, r.appointment_type,
+          r.insurance, r.insurance_carrier, r.carrier,
+          r.created_at
+        ]
+          .map((x) => String(x || "").toLowerCase())
+          .join(" ");
+        return blob.includes(q);
+      });
+
+  const header = [
+    "Date Booked",
+    "Patient Name",
+    "Patient DOB",
+    "Patient Status",
+    "Appt Date",
+    "Appt Time",
+    "Appointment Type",
+    "Insurance",
+  ];
+
   const lines = [header.join(",")];
 
-  for (const r of rows) {
-    const booked = String(r.created_at || "").slice(0, 10);
+  // newest first
+  const sorted = [...rows].sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+
+  for (const r of sorted) {
+    const booked = ymdFromIso(r.created_at);
     const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
     const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "";
     const pStatus = String(r.patient_status || "");
@@ -333,44 +451,53 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
-function csvEscape(v) {
-  const s = String(v ?? "");
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
-
-/* ---------------- Load ---------------- */
+/* ---------------- Load dashboard ---------------- */
 
 async function loadAll() {
   setStatus("Loading…", "");
+
   try {
-    const start = (els.startDate.value || "").trim();
-    const end = (els.endDate.value || "").trim();
-    const qs = (start && end) ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` : "";
+    const start = (els.startDate?.value || "").trim();
+    const end = (els.endDate?.value || "").trim();
+
+    const qs =
+      start && end
+        ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+        : "";
+
+    const bookingsPath = `/office/bookings${qs ? qs + "&" : "?"}limit=250`;
+    const analyticsPath = `/office/analytics${qs}`;
 
     const [bookings, analytics] = await Promise.all([
-      api(`/office/bookings${(qs ? qs + "&" : "?")}limit=250`),
-      api(`/office/analytics${qs}`),
+      apiGet(bookingsPath),
+      apiGet(analyticsPath),
     ]);
 
-    renderTable(bookings.results || []);
+    const rows = bookings.results || [];
 
-    const series = buildLineSeries(bookings.results || [], start || null, end || null);
+    // Table
+    renderTable(rows);
+
+    // Line chart (DATE BOOKED)
+    const series = buildLineSeriesByBooked(rows, start || null, end || null);
     renderLineChart(series.labels, series.counts);
 
-    const newCount = Number(analytics?.byStatus?.find?.(x => x.key === "new")?.count || 0);
-    const existingCount = Number(analytics?.byStatus?.find?.(x => x.key === "existing")?.count || 0);
+    // Pie
+    const newCount = Number(analytics?.byStatus?.find?.((x) => x.key === "new")?.count || 0);
+    const existingCount = Number(analytics?.byStatus?.find?.((x) => x.key === "existing")?.count || 0);
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
   } catch (e) {
-    setStatus(String(e), "err");
+    setStatus(String(e?.message || e), "err");
   }
 }
 
-/* ---------- Quick range buttons ---------- */
+/* ---------------- Quick range buttons ---------------- */
+
 function applyRange(mode) {
   const t = todayYYYYMMDD();
+
   if (mode === "today") {
     els.startDate.value = t;
     els.endDate.value = t;
@@ -384,94 +511,117 @@ function applyRange(mode) {
       els.startDate.value = addDays(t, -(days - 1));
     }
   }
+
   loadAll();
+}
+
+/* ---------------- Login flow ---------------- */
+
+async function doLogin(user, pass, remember) {
+  const header = basicAuthHeader(user, pass);
+  if (!header) throw new Error("Please enter a username and password.");
+
+  AUTH_HEADER = header;
+
+  // Verify credentials before switching views
+  await verifyAuth();
+
+  saveAuthIfRemember(remember, header);
+  setLoginError("");
+
+  showDashboard();
+  setStatus("Connected", "ok");
+
+  await loadAll();
+}
+
+function doLogout() {
+  AUTH_HEADER = null;
+  clearSavedAuth();
+  setStatus("Not connected", "");
+  showLogin();
 }
 
 /* ---------------- Events ---------------- */
 
-els.loginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (els.loginForm) {
+  els.loginForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    setLoginError("");
 
-  const user = (els.loginUser.value || "").trim();
-  const pass = (els.loginPass.value || "").trim();
-  const remember = !!els.loginRemember.checked;
+    const user = els.loginUser?.value || "";
+    const pass = els.loginPass?.value || "";
+    const remember = !!els.loginRemember?.checked;
 
-  if (!user || !pass) {
-    setLoginError("Please enter both username and password.");
-    return;
-  }
+    try {
+      // Disable button briefly
+      if (els.btnSubmitLogin) {
+        els.btnSubmitLogin.disabled = true;
+        els.btnSubmitLogin.textContent = "Logging in…";
+      }
 
-  setLoginError("");
-  els.btnSubmitLogin.disabled = true;
-  els.btnSubmitLogin.textContent = "Signing in…";
+      await doLogin(user, pass, remember);
+    } catch (err) {
+      AUTH_HEADER = null;
+      const msg = String(err?.message || err);
+      setLoginError(msg);
+    } finally {
+      if (els.btnSubmitLogin) {
+        els.btnSubmitLogin.disabled = false;
+        els.btnSubmitLogin.textContent = "Login Now";
+      }
+    }
+  });
+}
 
-  try {
-    const candidate = makeBasicAuth(user, pass);
-    AUTH_HEADER = candidate;
+if (els.btnLogout) {
+  els.btnLogout.addEventListener("click", () => doLogout());
+}
 
-    // Validate credentials with a quick call
-    await api(`/office/bookings?limit=1`);
+if (els.btnRefresh) {
+  els.btnRefresh.addEventListener("click", () => loadAll());
+}
 
-    rememberAuthIfWanted(candidate, remember);
+if (els.btnExport) {
+  els.btnExport.addEventListener("click", () => exportCsv());
+}
 
-    // Show dashboard
-    showDashboard();
+if (els.searchInput) {
+  els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+}
 
-    // default range
-    const t = todayYYYYMMDD();
-    els.endDate.value = t;
-    els.startDate.value = addDays(t, -29);
-
-    // wire pills
-    document.querySelectorAll(".pill").forEach((b) => {
-      b.addEventListener("click", () => applyRange(b.dataset.range));
-    });
-
-    // wire dashboard buttons
-    els.btnRefresh.addEventListener("click", () => loadAll());
-    els.btnExport.addEventListener("click", () => exportCsv());
-    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
-
-    await loadAll();
-  } catch (err) {
-    clearAuth();
-    setLoginError("Authentication required to access this page.");
-    showLogin();
-  } finally {
-    els.btnSubmitLogin.disabled = false;
-    els.btnSubmitLogin.textContent = "Continue";
-  }
-});
-
-els.btnLogout.addEventListener("click", () => {
-  clearAuth();
-  showLogin();
+document.querySelectorAll(".pill").forEach((b) => {
+  b.addEventListener("click", () => applyRange(b.dataset.range));
 });
 
 /* ---------------- Init ---------------- */
 
 (function init() {
-  const remembered = loadRememberedAuth();
-  if (remembered) {
-    AUTH_HEADER = remembered;
+  // Default dates (last 30 days)
+  const t = todayYYYYMMDD();
+  if (els.endDate) els.endDate.value = t;
+  if (els.startDate) els.startDate.value = addDays(t, -29);
+
+  // Attempt auto-login if remembered
+  const saved = loadSavedAuth();
+  if (saved) {
+    AUTH_HEADER = saved;
+    // Start with dashboard, but if verify fails, we revert to login.
     showDashboard();
+    setStatus("Connecting…", "");
 
-    const t = todayYYYYMMDD();
-    els.endDate.value = t;
-    els.startDate.value = addDays(t, -29);
+    verifyAuth()
+      .then(() => loadAll())
+      .catch(() => {
+        AUTH_HEADER = null;
+        clearSavedAuth();
+        showLogin();
+        setLoginError("Session expired. Please log in again.");
+      });
 
-    document.querySelectorAll(".pill").forEach((b) => {
-      b.addEventListener("click", () => applyRange(b.dataset.range));
-    });
-    els.btnRefresh.addEventListener("click", () => loadAll());
-    els.btnExport.addEventListener("click", () => exportCsv());
-    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
-
-    loadAll().catch(() => {
-      clearAuth();
-      showLogin();
-    });
-  } else {
-    showLogin();
+    return;
   }
+
+  // Otherwise show login
+  showLogin();
 })();
