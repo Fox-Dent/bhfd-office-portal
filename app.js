@@ -1,12 +1,13 @@
 /**
  * BHFD Office Portal
  * - Calls Office API Worker:
- *    GET /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD&limit=50
+ *    GET /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD homologated to DATE BOOKED (created_at)
  *    GET /office/analytics?start=YYYY-MM-DD&end=YYYY-MM-DD
  *
  * IMPORTANT:
  * - Set OFFICE_API_BASE to your Office API Worker URL.
- * - Login uses Basic Auth (prompt). Later we can replace with a nicer login modal.
+ * - Login uses Basic Auth (prompt).
+ * - Date range is based on DATE BOOKED (created_at), not appointment_date.
  */
 
 const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // <-- your Office API Worker
@@ -15,28 +16,22 @@ let AUTH_HEADER = null;
 let lineChart = null;
 let pieChart = null;
 
-function $(id) {
-  const el = document.getElementById(id);
-  return el;
-}
-
 const els = {
-  btnLogin: $("btnLogin"),
-  btnRefresh: $("btnRefresh"),
-  btnExport: $("btnExport"),
-  statusText: $("statusText"),
-  startDate: $("startDate"),
-  endDate: $("endDate"),
-  scheduledMeta: $("scheduledMeta"),
-  newMeta: $("newMeta"),
-  bookingsBody: $("bookingsBody"),
-  searchInput: $("searchInput"),
+  btnLogin: document.getElementById("btnLogin"),
+  btnRefresh: document.getElementById("btnRefresh"),
+  btnExport: document.getElementById("btnExport"),
+  statusText: document.getElementById("statusText"),
+  startDate: document.getElementById("startDate"),
+  endDate: document.getElementById("endDate"),
+  scheduledMeta: document.getElementById("scheduledMeta"),
+  newMeta: document.getElementById("newMeta"),
+  bookingsBody: document.getElementById("bookingsBody"),
+  searchInput: document.getElementById("searchInput"),
 };
 
 let cachedRows = []; // for search + CSV
 
 function setStatus(text, mode = "") {
-  if (!els.statusText) return;
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
@@ -116,7 +111,6 @@ function insuranceLabel(row) {
     row.insCarrier ||
     row.carrier ||
     "";
-
   const noIns = row.no_insurance ?? row.noInsurance ?? null;
 
   if (String(ins).trim()) return String(ins).trim();
@@ -139,53 +133,68 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+/**
+ * TABLE: shows Date Booked from created_at (YYYY-MM-DD)
+ */
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
-  const q = (els.searchInput?.value || "").trim().toLowerCase();
+  const q = (els.searchInput.value || "").trim().toLowerCase();
   const filtered = !q
     ? cachedRows
     : cachedRows.filter((r) => {
         const blob = [
-          r.patient_first, r.patient_last, r.patient_status,
-          r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier
-        ].map((x) => String(x || "").toLowerCase()).join(" ");
+          r.patient_first,
+          r.patient_last,
+          r.patient_status,
+          r.appointment_date,
+          r.appointment_time,
+          r.appointment_type,
+          r.insurance,
+          r.insurance_carrier,
+          r.carrier,
+          r.created_at,
+        ]
+          .map((x) => String(x || "").toLowerCase())
+          .join(" ");
         return blob.includes(q);
       });
-
-  if (!els.bookingsBody) return;
 
   if (!filtered.length) {
     els.bookingsBody.innerHTML = `<tr><td colspan="8" class="empty">No matching bookings.</td></tr>`;
     return;
   }
 
-  els.bookingsBody.innerHTML = filtered.map((r) => {
-    const booked = String(r.created_at || "").replace("T", " ").slice(0, 10);
-    const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
-    const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
-    const pStatus = statusBadge(r.patient_status);
-    const apptDate = r.appointment_date || "—";
-    const apptTime = r.appointment_time || "—";
-    const type = apptTypeLabel(r.appointment_type);
-    const ins = insuranceLabel(r);
+  els.bookingsBody.innerHTML = filtered
+    .map((r) => {
+      const booked = String(r.created_at || "").slice(0, 10); // ✅ DATE BOOKED
+      const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
+      const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
+      const pStatus = statusBadge(r.patient_status);
+      const apptDate = r.appointment_date || "—";
+      const apptTime = r.appointment_time || "—";
+      const type = apptTypeLabel(r.appointment_type);
+      const ins = insuranceLabel(r);
 
-    return `
-      <tr>
-        <td>${booked || "—"}</td>
-        <td>${escapeHtml(name)}</td>
-        <td>${escapeHtml(dob)}</td>
-        <td>${pStatus}</td>
-        <td>${escapeHtml(apptDate)}</td>
-        <td>${escapeHtml(apptTime)}</td>
-        <td>${escapeHtml(type)}</td>
-        <td>${escapeHtml(ins)}</td>
-      </tr>
-    `;
-  }).join("");
+      return `
+        <tr>
+          <td>${escapeHtml(booked || "—")}</td>
+          <td>${escapeHtml(name)}</td>
+          <td>${escapeHtml(dob)}</td>
+          <td>${pStatus}</td>
+          <td>${escapeHtml(apptDate)}</td>
+          <td>${escapeHtml(apptTime)}</td>
+          <td>${escapeHtml(type)}</td>
+          <td>${escapeHtml(ins)}</td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
+/**
+ * LINE CHART: counts bookings per day by DATE BOOKED (created_at)
+ */
 function buildLineSeries(bookings, start, end) {
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
@@ -202,7 +211,7 @@ function buildLineSeries(bookings, start, end) {
   const idx = new Map(labels.map((d, i) => [d, i]));
 
   for (const b of bookings || []) {
-    const d = String(b.appointment_date || "").slice(0, 10);
+    const d = String(b.created_at || "").slice(0, 10); // ✅ DATE BOOKED
     if (!d || !idx.has(d)) continue;
     counts[idx.get(d)] += 1;
   }
@@ -211,78 +220,79 @@ function buildLineSeries(bookings, start, end) {
 }
 
 function renderLineChart(labels, counts) {
-  const canvas = document.getElementById("lineChart");
-  if (!canvas || typeof Chart === "undefined") return;
+  const ctx = document.getElementById("lineChart");
 
   const total = counts.reduce((a, b) => a + b, 0);
-  if (els.scheduledMeta) els.scheduledMeta.textContent = `${total} total in selected range`;
+  els.scheduledMeta.textContent = `${total} total booked in selected range`;
 
   if (lineChart) lineChart.destroy();
 
-  lineChart = new Chart(canvas, {
+  lineChart = new Chart(ctx, {
     type: "line",
     data: {
       labels,
-      datasets: [{
-        label: "Scheduled Appointments",
-        data: counts,
-        borderColor: "#6f8f7a",
-        backgroundColor: "rgba(111,143,122,.15)",
-        pointBackgroundColor: "#6f8f7a",
-        pointRadius: 3,
-        tension: 0.25,
-        fill: true,
-      }]
+      datasets: [
+        {
+          label: "Bookings (Date Booked)",
+          data: counts,
+          borderColor: "#6f8f7a",
+          backgroundColor: "rgba(111,143,122,.15)",
+          pointBackgroundColor: "#6f8f7a",
+          pointRadius: 3,
+          tension: 0.25,
+          fill: true,
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true }
+        tooltip: { enabled: true },
       },
       scales: {
         x: {
           ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
-          grid: { color: "rgba(0,0,0,.04)" }
+          grid: { color: "rgba(0,0,0,.04)" },
         },
         y: {
           beginAtZero: true,
           ticks: { precision: 0 },
-          grid: { color: "rgba(0,0,0,.04)" }
-        }
-      }
-    }
+          grid: { color: "rgba(0,0,0,.04)" },
+        },
+      },
+    },
   });
 }
 
 function renderPieChart(newCount, returningCount) {
-  const canvas = document.getElementById("pieChart");
-  if (!canvas || typeof Chart === "undefined") return;
-
+  const ctx = document.getElementById("pieChart");
   const totalNew = Number(newCount || 0);
   const totalRet = Number(returningCount || 0);
-  if (els.newMeta) els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
+  els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
 
   if (pieChart) pieChart.destroy();
 
-  pieChart = new Chart(canvas, {
+  pieChart = new Chart(ctx, {
     type: "pie",
     data: {
       labels: ["New Patients", "Returning Patients"],
-      datasets: [{
-        data: [totalNew, totalRet],
-        backgroundColor: ["#6f8f7a", "#2f7c9a"],
-        borderColor: "rgba(255,255,255,.9)",
-        borderWidth: 2
-      }]
+      datasets: [
+        {
+          data: [totalNew, totalRet],
+          backgroundColor: ["#6f8f7a", "#2f7c9a"],
+          borderColor: "rgba(255,255,255,.9)",
+          borderWidth: 2,
+        },
+      ],
     },
     options: {
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true }
-      }
-    }
+        tooltip: { enabled: true },
+      },
+    },
   });
 }
 
@@ -293,15 +303,24 @@ function csvEscape(v) {
 }
 
 function exportCsv() {
-  const q = (els.searchInput?.value || "").trim().toLowerCase();
+  const q = (els.searchInput.value || "").trim().toLowerCase();
   const rows = !q
     ? cachedRows
     : cachedRows.filter((r) => {
         const blob = [
-          r.patient_first, r.patient_last, r.patient_status,
-          r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier
-        ].map((x) => String(x || "").toLowerCase()).join(" ");
+          r.patient_first,
+          r.patient_last,
+          r.patient_status,
+          r.appointment_date,
+          r.appointment_time,
+          r.appointment_type,
+          r.insurance,
+          r.insurance_carrier,
+          r.carrier,
+          r.created_at,
+        ]
+          .map((x) => String(x || "").toLowerCase())
+          .join(" ");
         return blob.includes(q);
       });
 
@@ -319,7 +338,7 @@ function exportCsv() {
   const lines = [header.join(",")];
 
   for (const r of rows) {
-    const booked = String(r.created_at || "").replace("T", " ").slice(0, 10);
+    const booked = String(r.created_at || "").slice(0, 10);
     const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
     const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "";
     const pStatus = String(r.patient_status || "");
@@ -346,25 +365,30 @@ function exportCsv() {
 async function loadAll() {
   setStatus("Loading…", "");
   try {
-    const start = (els.startDate?.value || "").trim();
-    const end = (els.endDate?.value || "").trim();
-    const qs = (start && end) ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` : "";
-
-    const bookingsPath = `/office/bookings${(qs ? qs + "&" : "?")}limit=250`;
-    const analyticsPath = `/office/analytics${qs}`;
+    const start = (els.startDate.value || "").trim();
+    const end = (els.endDate.value || "").trim();
+    const qs =
+      start && end
+        ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+        : "";
 
     const [bookings, analytics] = await Promise.all([
-      api(bookingsPath),
-      api(analyticsPath),
+      api(`/office/bookings${(qs ? qs + "&" : "?")}limit=250`),
+      api(`/office/analytics${qs}`),
     ]);
 
+    // Table
     renderTable(bookings.results || []);
 
+    // Line chart (date booked)
     const series = buildLineSeries(bookings.results || [], start || null, end || null);
     renderLineChart(series.labels, series.counts);
 
-    const newCount = Number(analytics?.byStatus?.find?.(x => x.key === "new")?.count || 0);
-    const existingCount = Number(analytics?.byStatus?.find?.(x => x.key === "existing")?.count || 0);
+    // Pie (status breakdown in the same filtered range)
+    const newCount = Number(analytics?.byStatus?.find?.((x) => x.key === "new")?.count || 0);
+    const existingCount = Number(
+      analytics?.byStatus?.find?.((x) => x.key === "existing")?.count || 0
+    );
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
@@ -376,8 +400,6 @@ async function loadAll() {
 /* ---------- Quick range buttons ---------- */
 function applyRange(mode) {
   const t = todayYYYYMMDD();
-  if (!els.startDate || !els.endDate) return;
-
   if (mode === "today") {
     els.startDate.value = t;
     els.endDate.value = t;
@@ -395,27 +417,23 @@ function applyRange(mode) {
 }
 
 /* ---------- Events ---------- */
-if (els.btnLogin) {
-  els.btnLogin.addEventListener("click", () => {
-    AUTH_HEADER = null;
-    setStatus("Not connected", "");
-    loadAll();
-  });
-}
+els.btnLogin.addEventListener("click", () => {
+  AUTH_HEADER = null;
+  setStatus("Not connected", "");
+  loadAll();
+});
 
-if (els.btnRefresh) els.btnRefresh.addEventListener("click", () => loadAll());
-if (els.btnExport) els.btnExport.addEventListener("click", () => exportCsv());
-if (els.searchInput) els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+els.btnRefresh.addEventListener("click", () => loadAll());
+els.btnExport.addEventListener("click", () => exportCsv());
+els.searchInput.addEventListener("input", () => renderTable(cachedRows));
 
 document.querySelectorAll(".pill").forEach((b) => {
   b.addEventListener("click", () => applyRange(b.dataset.range));
 });
 
-/* ---------- Default dates + AUTO LOAD ---------- */
+/* ---------- Default dates ---------- */
 (function init() {
   const t = todayYYYYMMDD();
-  if (els.endDate) els.endDate.value = t;
-  if (els.startDate) els.startDate.value = addDays(t, -29); // default last 30
-  // ✅ AUTO LOAD on page open
-  loadAll();
+  els.endDate.value = t;
+  els.startDate.value = addDays(t, -29); // default last 30
 })();
