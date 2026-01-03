@@ -9,7 +9,7 @@
  * - Login uses Basic Auth (prompt). Later we can replace with a nicer login modal.
  */
 
-const OFFICE_API_BASE = "https://YOUR-OFFICE-WORKER.example.workers.dev"; // <-- CHANGE ME
+const OFFICE_API_BASE = "https://bhfd-office-portal.calcifer6456.workers.dev"; // <-- CHANGE ME
 
 let AUTH_HEADER = null;
 let lineChart = null;
