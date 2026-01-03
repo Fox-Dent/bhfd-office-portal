@@ -38,97 +38,123 @@ img { max-width: 100%; height: auto; }
 .btn-secondary:hover { background: #cfc9bf; }
 
 /* =========================================================
-   LOGIN VIEW (ROBUST TARGETING)
-   Works even if your classes differ.
+   LOGIN PAGE (FORCED CENTER COLUMN)
 ========================================================= */
 
-/* Your login view wrapper (you said it's a page before dashboard) */
+/* The login "page" wrapper */
 #loginView {
   min-height: 100vh;
   width: 100%;
-  display: flex;
-  align-items: center;     /* vertical center */
-  justify-content: center; /* horizontal center */
-  padding: 48px 16px;
+  padding: 56px 16px;
   background: #f4efe7;
+
+  /* Force a centered column */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 18px !important;
 }
 
-/* Center column */
+/* If you have any inner row wrappers, force them to column too */
+#loginView .row,
+#loginView .columns,
+#loginView .grid,
+#loginView .wrap,
+#loginView .wrapper,
+#loginView .container,
+#loginView .login-wrap,
+#loginView .login-row,
+#loginView .login-layout {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Center ALL direct children so they don’t sit side-by-side */
 #loginView > * {
   width: 100%;
   max-width: 520px;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
-/* Top branding area (logo + powered) */
+/* --- Top brand block: logo + "Powered by FoxDent" --- */
 #loginView .login-top,
 #loginView .brand-top,
 #loginView .top,
 #loginView header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin: 0 auto 18px auto;
-  text-align: left;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto !important;
+
+  display: flex !important;
+  flex-direction: column !important; /* stack like your mock */
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+
+  text-align: center !important;
 }
 
-/* FORCE the login logo to be small regardless of class */
-#loginView img {
-  width: 58px !important;
-  height: 58px !important;
-  max-width: 58px !important;
-  max-height: 58px !important;
-  object-fit: contain;
-}
-
-/* If you have a big “logo” class elsewhere, limit it only on login */
+/* Make the logo smaller (login page only) */
+#loginView img,
 #loginView img.logo,
 #loginView img#logo,
 #loginView img[alt*="FoxDent" i] {
-  width: 58px !important;
-  height: 58px !important;
+  width: 52px !important;
+  height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto !important;
 }
 
-/* “Powered by FoxDent” text block */
+/* "Powered by FoxDent" line */
 #loginView .powered,
 #loginView .login-powered,
 #loginView .powered-by {
   font-size: 13px;
-  color: #1f2a24;
+  font-weight: 700;
+  color: rgba(31, 42, 36, .85);
   line-height: 1.1;
+  text-align: center;
 }
 #loginView .foxdent {
   color: #6f8f7a;
   font-weight: 900;
 }
 
-/* Center the entire login card */
+/* --- The login card itself --- */
 #loginView .login-card,
 #loginView .card,
 #loginView .panel,
 #loginView .box,
 #loginView form {
-  margin: 0 auto;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto !important;
 }
 
-/* The login card itself */
+/* If your form is inside another div, center that too */
 #loginView .login-card,
-#loginView .card,
 #loginView .panel,
 #loginView .box {
-  background: rgba(255,255,255,.85);
+  background: rgba(255,255,255,.88);
   border: 2px solid rgba(111,143,122,.18);
-  border-radius: 10px; /* screenshot has squarer corners */
+  border-radius: 10px;
   box-shadow: 0 14px 30px rgba(0,0,0,.10);
-  padding: 22px;
+  padding: 22px 22px 18px;
   text-align: center;
 }
 
-/* Title like screenshot */
+/* Title + subtitle */
 #loginView h1,
 #loginView .login-title {
   margin: 0 0 2px 0;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
 }
 
@@ -138,8 +164,7 @@ img { max-width: 100%; height: auto; }
   margin: 0 0 16px 0;
   font-size: 12px;
   font-weight: 700;
-  color: #1f2a24;
-  opacity: .8;
+  color: rgba(31,42,36,.75);
 }
 
 /* Labels */
@@ -147,23 +172,27 @@ img { max-width: 100%; height: auto; }
   display: block;
   font-size: 11px;
   font-weight: 800;
-  margin: 10px 0 5px;
-  color: #1f2a24;
+  margin: 10px 0 6px;
+  color: rgba(31,42,36,.9);
+  text-align: center;
 }
 
-/* Inputs: slimmer like screenshot */
+/* Inputs */
 #loginView input[type="text"],
 #loginView input[type="password"],
 #loginView input[type="email"] {
-  width: 70%;
-  min-width: 220px;
-  max-width: 320px;
-  padding: 7px 10px;
-  border-radius: 2px;
+  width: 78%;
+  min-width: 240px;
+  max-width: 330px;
+  padding: 8px 10px;
+  border-radius: 3px;
   border: 1px solid rgba(0,0,0,.10);
-  background: rgba(255,255,255,.9);
+  background: rgba(255,255,255,.95);
   font-size: 13px;
   outline: none;
+
+  display: block;
+  margin: 0 auto;
 }
 
 #loginView input:focus {
@@ -171,46 +200,50 @@ img { max-width: 100%; height: auto; }
   box-shadow: 0 0 0 3px rgba(111,143,122,.15);
 }
 
-/* Checkbox line */
+/* Remember checkbox row */
 #loginView .checkbox,
 #loginView .remember {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
   gap: 8px;
-  margin: 10px 0 14px;
+  margin: 12px 0 14px;
   font-size: 11px;
   color: rgba(31,42,36,.8);
 }
 
-/* Continue button like screenshot (flat bar) */
+/* Continue button */
 #loginView button,
 #loginView .btn-login,
 #loginView input[type="submit"] {
-  width: 70%;
-  min-width: 220px;
-  max-width: 320px;
-  padding: 8px 12px;
-  border-radius: 2px;
+  width: 78%;
+  min-width: 240px;
+  max-width: 330px;
+  padding: 9px 12px;
+  border-radius: 3px;
   border: none;
   background: #6f8f7a;
   color: #fff;
   font-weight: 900;
   cursor: pointer;
+
+  display: block;
+  margin: 6px auto 0;
 }
 #loginView button:hover,
 #loginView input[type="submit"]:hover {
   filter: brightness(.97);
 }
 
-/* Footer copy */
+/* Terms text */
 #loginView .login-foot,
 #loginView .terms,
 #loginView small {
   display: block;
   margin-top: 14px;
   font-size: 11px;
-  color: rgba(31,42,36,.75);
+  color: rgba(31,42,36,.7);
+  text-align: center;
 }
 
 /* =========================================================
@@ -387,6 +420,7 @@ tbody td {
 
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
+
   #loginView input[type="text"],
   #loginView input[type="password"],
   #loginView input[type="email"],
