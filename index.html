@@ -24,6 +24,7 @@
 
         <div class="header-actions">
           <button id="btnLogin" class="btn btn-secondary" type="button">Login</button>
+          <button id="btnLogout" class="btn btn-secondary hidden" type="button">Logout</button>
           <button id="btnRefresh" class="btn" type="button">Refresh</button>
         </div>
       </header>
@@ -122,6 +123,45 @@
       <footer class="footer">
         <span>FoxDent • Brook Hollow Family Dentistry</span>
       </footer>
+    </div>
+
+    <!-- ✅ LOGIN MODAL -->
+    <div id="loginModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close="1"></div>
+
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div class="modal-top">
+          <div>
+            <div id="loginTitle" class="modal-title">Office Login</div>
+            <div class="modal-sub">Enter your FoxDent Office Portal credentials</div>
+          </div>
+          <button id="btnCloseLogin" class="icon-btn" type="button" aria-label="Close">✕</button>
+        </div>
+
+        <div id="loginError" class="modal-error hidden"></div>
+
+        <div class="modal-body">
+          <div class="field">
+            <label for="loginUser">Username</label>
+            <input id="loginUser" type="text" autocomplete="username" placeholder="e.g. BHFD" />
+          </div>
+
+          <div class="field">
+            <label for="loginPass">Password</label>
+            <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+
+          <label class="checkbox">
+            <input id="loginRemember" type="checkbox" />
+            Remember this session on this device
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btnCancelLogin" class="btn btn-secondary" type="button">Cancel</button>
+          <button id="btnSubmitLogin" class="btn" type="button">Login</button>
+        </div>
+      </div>
     </div>
 
     <script src="./app.js"></script>
