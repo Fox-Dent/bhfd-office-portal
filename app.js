@@ -1,11 +1,4 @@
-/**
- * BHFD Office Portal
- * - Calls Office API Worker B:
- *    GET /office/bookings?start=YYYY-MM-DD&end=YYYY-MM-DD&limit=50
- *    GET /office/analytics?start=YYYY-MM-DD&end=YYYY-MM-DD
- */
-
-const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // <-- keep your Worker B URL
+const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // Worker B URL
 
 let AUTH_HEADER = null;
 let lineChart = null;
@@ -14,10 +7,24 @@ let pieChart = null;
 const AUTH_STORAGE_KEY = "bhfd_office_auth_basic";
 
 const els = {
-  btnLogin: document.getElementById("btnLogin"),
+  // views
+  loginView: document.getElementById("loginView"),
+  dashboardView: document.getElementById("dashboardView"),
+
+  // login
+  loginForm: document.getElementById("loginForm"),
+  loginUser: document.getElementById("loginUser"),
+  loginPass: document.getElementById("loginPass"),
+  loginRemember: document.getElementById("loginRemember"),
+  loginError: document.getElementById("loginError"),
+  btnSubmitLogin: document.getElementById("btnSubmitLogin"),
+
+  // dashboard actions
   btnLogout: document.getElementById("btnLogout"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
+
+  // dashboard fields
   statusText: document.getElementById("statusText"),
   startDate: document.getElementById("startDate"),
   endDate: document.getElementById("endDate"),
@@ -25,29 +32,35 @@ const els = {
   newMeta: document.getElementById("newMeta"),
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
-
-  // modal
-  loginModal: document.getElementById("loginModal"),
-  loginUser: document.getElementById("loginUser"),
-  loginPass: document.getElementById("loginPass"),
-  loginRemember: document.getElementById("loginRemember"),
-  loginError: document.getElementById("loginError"),
-  btnCloseLogin: document.getElementById("btnCloseLogin"),
-  btnCancelLogin: document.getElementById("btnCancelLogin"),
-  btnSubmitLogin: document.getElementById("btnSubmitLogin"),
 };
 
-let cachedRows = []; // for search + CSV
+let cachedRows = [];
+
+function showLogin() {
+  els.dashboardView.classList.add("hidden");
+  els.loginView.classList.remove("hidden");
+  setLoginError("");
+  setStatus("Not connected", "");
+  setTimeout(() => {
+    if (els.loginUser.value) els.loginPass.focus();
+    else els.loginUser.focus();
+  }, 0);
+}
+
+function showDashboard() {
+  els.loginView.classList.add("hidden");
+  els.dashboardView.classList.remove("hidden");
+}
+
+function setLoginError(msg) {
+  els.loginError.textContent = msg || "";
+  els.loginError.classList.toggle("hidden", !msg);
+}
 
 function setStatus(text, mode = "") {
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
-}
-
-function setConnectedUI(isConnected) {
-  els.btnLogin.classList.toggle("hidden", isConnected);
-  els.btnLogout.classList.toggle("hidden", !isConnected);
 }
 
 function todayYYYYMMDD() {
@@ -74,46 +87,9 @@ function monthStart(dateStr) {
   return `${y}-${m}-01`;
 }
 
-/* ---------------- Modal helpers ---------------- */
-
-function showLoginModal(prefillUser = "") {
-  els.loginError.classList.add("hidden");
-  els.loginError.textContent = "";
-  els.loginUser.value = prefillUser || "";
-  els.loginPass.value = "";
-  els.loginRemember.checked = false;
-
-  els.loginModal.classList.remove("hidden");
-  els.loginModal.setAttribute("aria-hidden", "false");
-
-  // focus username (or password if username already filled)
-  setTimeout(() => {
-    if (els.loginUser.value) els.loginPass.focus();
-    else els.loginUser.focus();
-  }, 0);
-}
-
-function hideLoginModal() {
-  els.loginModal.classList.add("hidden");
-  els.loginModal.setAttribute("aria-hidden", "true");
-}
-
-function setLoginError(msg) {
-  els.loginError.textContent = msg || "";
-  els.loginError.classList.toggle("hidden", !msg);
-}
-
 function makeBasicAuth(user, pass) {
   const token = btoa(`${user}:${pass}`);
   return `Basic ${token}`;
-}
-
-function rememberAuthIfWanted(authHeader, remember) {
-  if (remember) {
-    sessionStorage.setItem(AUTH_STORAGE_KEY, authHeader);
-  } else {
-    sessionStorage.removeItem(AUTH_STORAGE_KEY);
-  }
 }
 
 function loadRememberedAuth() {
@@ -121,11 +97,14 @@ function loadRememberedAuth() {
   return v && v.startsWith("Basic ") ? v : null;
 }
 
+function rememberAuthIfWanted(authHeader, remember) {
+  if (remember) sessionStorage.setItem(AUTH_STORAGE_KEY, authHeader);
+  else sessionStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
 function clearAuth() {
   AUTH_HEADER = null;
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
-  setConnectedUI(false);
-  setStatus("Not connected", "");
 }
 
 /* ---------------- API ---------------- */
@@ -143,7 +122,7 @@ async function api(path) {
 
   if (res.status === 401) {
     clearAuth();
-    throw new Error("Unauthorized (wrong credentials). Please login again.");
+    throw new Error("Unauthorized (wrong credentials).");
   }
 
   const data = await res.json().catch(() => null);
@@ -153,7 +132,7 @@ async function api(path) {
   return data;
 }
 
-/* ---------------- UI render helpers ---------------- */
+/* ---------------- Render helpers ---------------- */
 
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
@@ -167,7 +146,6 @@ function apptTypeLabel(t) {
 function insuranceLabel(row) {
   const ins = row.insurance || row.insurance_carrier || row.insCarrier || row.carrier || "";
   const noIns = row.no_insurance ?? row.noInsurance ?? null;
-
   if (String(ins).trim()) return String(ins).trim();
   if (noIns === true) return "Self-Pay";
   return "—";
@@ -177,6 +155,15 @@ function statusBadge(status) {
   const s = String(status || "").toLowerCase();
   if (s.includes("new")) return `<span class="badge badge-new">New Patient</span>`;
   return `<span class="badge badge-existing">Existing</span>`;
+}
+
+function escapeHtml(s) {
+  return String(s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function renderTable(rows) {
@@ -224,17 +211,8 @@ function renderTable(rows) {
   }).join("");
 }
 
-function escapeHtml(s) {
-  return String(s || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 function buildLineSeries(bookings, start, end) {
-  // ✅ Counts bookings per day using CREATED_AT date (date booked), matching your new range behavior
+  // ✅ book-count by Date Booked (created_at)
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -284,20 +262,10 @@ function renderLineChart(labels, counts) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true }
-      },
+      plugins: { legend: { display: false } },
       scales: {
-        x: {
-          ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 },
-          grid: { color: "rgba(0,0,0,.04)" }
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { precision: 0 },
-          grid: { color: "rgba(0,0,0,.04)" }
-        }
+        x: { ticks: { autoSkip: true, maxTicksLimit: 10 }, grid: { color: "rgba(0,0,0,.04)" } },
+        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "rgba(0,0,0,.04)" } },
       }
     }
   });
@@ -322,39 +290,22 @@ function renderPieChart(newCount, returningCount) {
         borderWidth: 2
       }]
     },
-    options: {
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true }
-      }
-    }
+    options: { plugins: { legend: { display: false } } }
   });
 }
 
 function exportCsv() {
   const q = (els.searchInput.value || "").trim().toLowerCase();
-  const rows = !q
-    ? cachedRows
-    : cachedRows.filter((r) => {
-        const blob = [
-          r.patient_first, r.patient_last, r.patient_status,
-          r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier, r.created_at
-        ].map((x) => String(x || "").toLowerCase()).join(" ");
-        return blob.includes(q);
-      });
+  const rows = !q ? cachedRows : cachedRows.filter((r) => {
+    const blob = [
+      r.patient_first, r.patient_last, r.patient_status,
+      r.appointment_date, r.appointment_time, r.appointment_type,
+      r.insurance, r.insurance_carrier, r.carrier, r.created_at
+    ].map((x) => String(x || "").toLowerCase()).join(" ");
+    return blob.includes(q);
+  });
 
-  const header = [
-    "Date Booked",
-    "Patient Name",
-    "Patient DOB",
-    "Patient Status",
-    "Appt Date",
-    "Appt Time",
-    "Appointment Type",
-    "Insurance",
-  ];
-
+  const header = ["Date Booked","Patient Name","Patient DOB","Patient Status","Appt Date","Appt Time","Appointment Type","Insurance"];
   const lines = [header.join(",")];
 
   for (const r of rows) {
@@ -412,7 +363,6 @@ async function loadAll() {
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
-    setConnectedUI(true);
   } catch (e) {
     setStatus(String(e), "err");
   }
@@ -437,40 +387,11 @@ function applyRange(mode) {
   loadAll();
 }
 
-/* ---------------- Modal events ---------------- */
+/* ---------------- Events ---------------- */
 
-els.btnLogin.addEventListener("click", () => showLoginModal());
+els.loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-els.btnLogout.addEventListener("click", () => {
-  clearAuth();
-  setStatus("Not connected", "");
-});
-
-els.btnCloseLogin.addEventListener("click", () => hideLoginModal());
-els.btnCancelLogin.addEventListener("click", () => hideLoginModal());
-
-// click backdrop closes
-els.loginModal.addEventListener("click", (e) => {
-  const t = e.target;
-  if (t && t.dataset && t.dataset.close === "1") hideLoginModal();
-});
-
-// ESC closes
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !els.loginModal.classList.contains("hidden")) {
-    hideLoginModal();
-  }
-});
-
-// Enter submits when modal open
-els.loginPass.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") els.btnSubmitLogin.click();
-});
-els.loginUser.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") els.btnSubmitLogin.click();
-});
-
-els.btnSubmitLogin.addEventListener("click", async () => {
   const user = (els.loginUser.value || "").trim();
   const pass = (els.loginPass.value || "").trim();
   const remember = !!els.loginRemember.checked;
@@ -480,52 +401,77 @@ els.btnSubmitLogin.addEventListener("click", async () => {
     return;
   }
 
-  const candidate = makeBasicAuth(user, pass);
+  setLoginError("");
+  els.btnSubmitLogin.disabled = true;
+  els.btnSubmitLogin.textContent = "Signing in…";
 
-  // Try a small authenticated request before accepting
   try {
+    const candidate = makeBasicAuth(user, pass);
     AUTH_HEADER = candidate;
-    setStatus("Connecting…", "");
-    setLoginError("");
 
-    // ping bookings quickly
+    // Validate credentials with a quick call
     await api(`/office/bookings?limit=1`);
+
     rememberAuthIfWanted(candidate, remember);
 
-    hideLoginModal();
-    setConnectedUI(true);
+    // Show dashboard
+    showDashboard();
+
+    // default range
+    const t = todayYYYYMMDD();
+    els.endDate.value = t;
+    els.startDate.value = addDays(t, -29);
+
+    // wire pills
+    document.querySelectorAll(".pill").forEach((b) => {
+      b.addEventListener("click", () => applyRange(b.dataset.range));
+    });
+
+    // wire dashboard buttons
+    els.btnRefresh.addEventListener("click", () => loadAll());
+    els.btnExport.addEventListener("click", () => exportCsv());
+    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+
     await loadAll();
   } catch (err) {
-    AUTH_HEADER = null;
-    setConnectedUI(false);
-    setStatus("Not connected", "");
-    setLoginError(String(err));
+    clearAuth();
+    setLoginError("Authentication required to access this page.");
+    showLogin();
+  } finally {
+    els.btnSubmitLogin.disabled = false;
+    els.btnSubmitLogin.textContent = "Continue";
   }
 });
 
-/* ---------- Other events ---------- */
-els.btnRefresh.addEventListener("click", () => loadAll());
-els.btnExport.addEventListener("click", () => exportCsv());
-els.searchInput.addEventListener("input", () => renderTable(cachedRows));
-
-document.querySelectorAll(".pill").forEach((b) => {
-  b.addEventListener("click", () => applyRange(b.dataset.range));
+els.btnLogout.addEventListener("click", () => {
+  clearAuth();
+  showLogin();
 });
 
-/* ---------- Init ---------- */
-(function init() {
-  const t = todayYYYYMMDD();
-  els.endDate.value = t;
-  els.startDate.value = addDays(t, -29);
+/* ---------------- Init ---------------- */
 
-  // try restore auth from session
+(function init() {
   const remembered = loadRememberedAuth();
   if (remembered) {
     AUTH_HEADER = remembered;
-    setConnectedUI(true);
-    loadAll();
+    showDashboard();
+
+    const t = todayYYYYMMDD();
+    els.endDate.value = t;
+    els.startDate.value = addDays(t, -29);
+
+    document.querySelectorAll(".pill").forEach((b) => {
+      b.addEventListener("click", () => applyRange(b.dataset.range));
+    });
+    els.btnRefresh.addEventListener("click", () => loadAll());
+    els.btnExport.addEventListener("click", () => exportCsv());
+    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+
+    loadAll().catch(() => {
+      clearAuth();
+      showLogin();
+    });
   } else {
-    setConnectedUI(false);
-    setStatus("Not connected", "");
+    showLogin();
   }
 })();
