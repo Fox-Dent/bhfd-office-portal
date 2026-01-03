@@ -9,141 +9,25 @@
   </head>
 
   <body>
-    <div class="container">
-      <header class="header">
-        <div class="brand">
-          <div class="brand-left">
-            <img src="./FoxDentLogo.png" alt="FoxDent" class="logo" />
-            <div class="brand-stack">
-              <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
-              <div class="welcome">Welcome, Brook Hollow Family Dentistry</div>
-              <div class="brand-sub">Office Portal • Online bookings dashboard</div>
-            </div>
-          </div>
+    <!-- ✅ LOGIN PAGE (shows first) -->
+    <main id="loginView" class="login-page">
+      <div class="login-top">
+        <img src="./FoxDentLogo.png" alt="FoxDent" class="login-logo" />
+        <div class="login-powered">
+          Powered by <span class="foxdent">FoxDent</span>
         </div>
+      </div>
 
-        <div class="header-actions">
-          <button id="btnLogin" class="btn btn-secondary" type="button">Login</button>
-          <button id="btnLogout" class="btn btn-secondary hidden" type="button">Logout</button>
-          <button id="btnRefresh" class="btn" type="button">Refresh</button>
-        </div>
-      </header>
+      <section class="login-card">
+        <h1 class="login-title">Login to FoxDent</h1>
+        <p class="login-sub">Office Portal Access</p>
 
-      <section class="filters card">
-        <div class="filters-row">
-          <div class="field">
-            <label for="startDate">Start</label>
-            <input id="startDate" type="date" />
-          </div>
+        <div id="loginError" class="login-error hidden"></div>
 
-          <div class="field">
-            <label for="endDate">End</label>
-            <input id="endDate" type="date" />
-          </div>
-
-          <div class="quick">
-            <button class="pill" data-range="today" type="button">Today</button>
-            <button class="pill" data-range="7" type="button">Last 7</button>
-            <button class="pill" data-range="30" type="button">Last 30</button>
-            <button class="pill" data-range="mtd" type="button">This Month</button>
-          </div>
-
-          <div class="status">
-            <span id="statusText" class="status-text">Not connected</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid">
-        <div class="card chart-card">
-          <div class="card-top">
-            <div>
-              <div class="card-title">Scheduled Appointments</div>
-              <div class="card-sub" id="scheduledMeta">—</div>
-            </div>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="lineChart" height="120"></canvas>
-          </div>
-        </div>
-
-        <div class="card chart-card">
-          <div class="card-top">
-            <div>
-              <div class="card-title">New Patients</div>
-              <div class="card-sub" id="newMeta">—</div>
-            </div>
-          </div>
-          <div class="chart-wrap pie">
-            <canvas id="pieChart" height="160"></canvas>
-          </div>
-          <div class="legend">
-            <div class="legend-item"><span class="dot dot-new"></span> New Patients</div>
-            <div class="legend-item"><span class="dot dot-return"></span> Returning Patients</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card table-card">
-        <div class="table-head">
-          <div>
-            <div class="card-title">Online Booking Log</div>
-            <div class="card-sub">Every successful booking made through the FoxDent scheduler</div>
-          </div>
-
-          <div class="table-tools">
-            <input id="searchInput" class="search" type="search" placeholder="Search name, type, insurance…" />
-            <button id="btnExport" class="btn btn-secondary" type="button">Export CSV</button>
-          </div>
-        </div>
-
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date Booked</th>
-                <th>Patient Name</th>
-                <th>Patient DOB</th>
-                <th>Patient Status</th>
-                <th>Appt Date</th>
-                <th>Appt Time</th>
-                <th>Appointment Type</th>
-                <th>Insurance</th>
-              </tr>
-            </thead>
-            <tbody id="bookingsBody">
-              <tr>
-                <td colspan="8" class="empty">No data yet — login and refresh.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <footer class="footer">
-        <span>FoxDent • Brook Hollow Family Dentistry</span>
-      </footer>
-    </div>
-
-    <!-- ✅ LOGIN MODAL -->
-    <div id="loginModal" class="modal hidden" aria-hidden="true">
-      <div class="modal-backdrop" data-close="1"></div>
-
-      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-        <div class="modal-top">
-          <div>
-            <div id="loginTitle" class="modal-title">Office Login</div>
-            <div class="modal-sub">Enter your FoxDent Office Portal credentials</div>
-          </div>
-          <button id="btnCloseLogin" class="icon-btn" type="button" aria-label="Close">✕</button>
-        </div>
-
-        <div id="loginError" class="modal-error hidden"></div>
-
-        <div class="modal-body">
+        <form id="loginForm" class="login-form">
           <div class="field">
             <label for="loginUser">Username</label>
-            <input id="loginUser" type="text" autocomplete="username" placeholder="e.g. BHFD" />
+            <input id="loginUser" type="text" autocomplete="username" placeholder="BHFD" />
           </div>
 
           <div class="field">
@@ -155,12 +39,131 @@
             <input id="loginRemember" type="checkbox" />
             Remember this session on this device
           </label>
-        </div>
 
-        <div class="modal-actions">
-          <button id="btnCancelLogin" class="btn btn-secondary" type="button">Cancel</button>
-          <button id="btnSubmitLogin" class="btn" type="button">Login</button>
+          <button id="btnSubmitLogin" class="btn btn-login" type="submit">Continue</button>
+        </form>
+
+        <div class="login-foot">
+          By logging in you agree to our <span class="linkish">Terms of Service</span>.
         </div>
+      </section>
+    </main>
+
+    <!-- ✅ DASHBOARD (hidden until logged in) -->
+    <div id="dashboardView" class="hidden">
+      <div class="container">
+        <header class="header">
+          <div class="brand">
+            <div class="brand-left">
+              <img src="./FoxDentLogo.png" alt="FoxDent" class="logo" />
+              <div class="brand-stack">
+                <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                <div class="welcome">Welcome, Brook Hollow Family Dentistry</div>
+                <div class="brand-sub">Office Portal • Online bookings dashboard</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button id="btnLogout" class="btn btn-secondary" type="button">Logout</button>
+            <button id="btnRefresh" class="btn" type="button">Refresh</button>
+          </div>
+        </header>
+
+        <section class="filters card">
+          <div class="filters-row">
+            <div class="field">
+              <label for="startDate">Start</label>
+              <input id="startDate" type="date" />
+            </div>
+
+            <div class="field">
+              <label for="endDate">End</label>
+              <input id="endDate" type="date" />
+            </div>
+
+            <div class="quick">
+              <button class="pill" data-range="today" type="button">Today</button>
+              <button class="pill" data-range="7" type="button">Last 7</button>
+              <button class="pill" data-range="30" type="button">Last 30</button>
+              <button class="pill" data-range="mtd" type="button">This Month</button>
+            </div>
+
+            <div class="status">
+              <span id="statusText" class="status-text">Not connected</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <div class="card chart-card">
+            <div class="card-top">
+              <div>
+                <div class="card-title">Scheduled Appointments</div>
+                <div class="card-sub" id="scheduledMeta">—</div>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="lineChart" height="120"></canvas>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="card-top">
+              <div>
+                <div class="card-title">New Patients</div>
+                <div class="card-sub" id="newMeta">—</div>
+              </div>
+            </div>
+            <div class="chart-wrap pie">
+              <canvas id="pieChart" height="160"></canvas>
+            </div>
+            <div class="legend">
+              <div class="legend-item"><span class="dot dot-new"></span> New Patients</div>
+              <div class="legend-item"><span class="dot dot-return"></span> Returning Patients</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card table-card">
+          <div class="table-head">
+            <div>
+              <div class="card-title">Online Booking Log</div>
+              <div class="card-sub">Every successful booking made through the FoxDent scheduler</div>
+            </div>
+
+            <div class="table-tools">
+              <input id="searchInput" class="search" type="search" placeholder="Search name, type, insurance…" />
+              <button id="btnExport" class="btn btn-secondary" type="button">Export CSV</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date Booked</th>
+                  <th>Patient Name</th>
+                  <th>Patient DOB</th>
+                  <th>Patient Status</th>
+                  <th>Appt Date</th>
+                  <th>Appt Time</th>
+                  <th>Appointment Type</th>
+                  <th>Insurance</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsBody">
+                <tr>
+                  <td colspan="8" class="empty">No data yet — login and refresh.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <span>FoxDent • Brook Hollow Family Dentistry</span>
+        </footer>
       </div>
     </div>
 
