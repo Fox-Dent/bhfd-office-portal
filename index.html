@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <title>BHFD Office Portal • FoxDent</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- ✅ IMPORTANT: this must match your actual file name exactly -->
     <link rel="stylesheet" href="./styles.css" />
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
 
@@ -65,10 +68,17 @@
 
     <!-- ✅ APP SHELL (hidden until logged in) -->
     <div id="dashboardView" class="hidden">
-      <!-- Sidebar (hamburger menu) -->
+      <!-- Sidebar -->
       <aside id="sidebar" class="sidebar" aria-label="Primary">
-        <button id="btnMenu" class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false">
-          <span class="burger" aria-hidden="true"></span>
+        <button
+          id="btnMenu"
+          class="menu-btn"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded="false"
+        >
+          <!-- ✅ hamburger icon now properly renders -->
+          <span class="burger" aria-hidden="true"><span></span></span>
         </button>
 
         <div class="sidebar-brand">
@@ -90,10 +100,10 @@
         </div>
       </aside>
 
-      <!-- Mobile overlay when menu open -->
+      <!-- Mobile overlay -->
       <div id="sidebarOverlay" class="sidebar-overlay hidden" tabindex="-1" aria-hidden="true"></div>
 
-      <!-- Main content area -->
+      <!-- Main content -->
       <main id="appMain" class="app-main">
         <!-- ====== DASHBOARD VIEW (UNCHANGED CONTENT) ====== -->
         <section id="route-dashboard" class="route-view">
@@ -213,32 +223,29 @@
           </div>
         </section>
 
-        <!-- ====== ANALYTICS VIEW (placeholder for step 2) ====== -->
+        <!-- placeholders -->
         <section id="route-analytics" class="route-view hidden">
           <div class="container">
             <header class="simple-head">
               <h2 class="simple-title">Analytics</h2>
               <p class="simple-sub">More detailed analytics will live here next.</p>
             </header>
-
             <div class="card">
               <div class="card-title">Coming next</div>
-              <div class="card-sub">We’ll build the metrics + charts like your reference image, step-by-step.</div>
+              <div class="card-sub">We’ll build the metrics + charts next.</div>
             </div>
           </div>
         </section>
 
-        <!-- ====== COMMUNICATION VIEW (placeholder for later Twilio) ====== -->
         <section id="route-communication" class="route-view hidden">
           <div class="container">
             <header class="simple-head">
               <h2 class="simple-title">Communication</h2>
-              <p class="simple-sub">This is where texting/emailing will go (Twilio integration later).</p>
+              <p class="simple-sub">Twilio texting/email will go here later.</p>
             </header>
-
             <div class="card">
               <div class="card-title">Coming soon</div>
-              <div class="card-sub">We’ll add message templates, send logs, and delivery status.</div>
+              <div class="card-sub">We’ll add templates + send logs next.</div>
             </div>
           </div>
         </section>
