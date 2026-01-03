@@ -35,8 +35,16 @@ const els = {
 };
 
 let cachedRows = [];
+let dashboardWired = false;
+
+function setMode(mode) {
+  // mode: "login" | "app"
+  document.body.classList.remove("mode-login", "mode-app");
+  document.body.classList.add(mode === "login" ? "mode-login" : "mode-app");
+}
 
 function showLogin() {
+  setMode("login");
   els.dashboardView.classList.add("hidden");
   els.loginView.classList.remove("hidden");
   setLoginError("");
@@ -48,7 +56,8 @@ function showLogin() {
 }
 
 function showDashboard() {
-  els.loginView.classList.add("hidden");
+  setMode("app");
+  els.loginView.classList.add("hidden");      // ✅ fully removed from layout
   els.dashboardView.classList.remove("hidden");
 }
 
@@ -127,7 +136,7 @@ async function api(path) {
 
   const data = await res.json().catch(() => null);
   if (!data || !data.ok) {
-    throw new Error((data && data.error) ? data.error : `API error (${res.status})`);
+    throw new Error(data?.error ? data.error : `API error (${res.status})`);
   }
   return data;
 }
@@ -212,7 +221,6 @@ function renderTable(rows) {
 }
 
 function buildLineSeries(bookings, start, end) {
-  // ✅ book-count by Date Booked (created_at)
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -294,6 +302,12 @@ function renderPieChart(newCount, returningCount) {
   });
 }
 
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
 function exportCsv() {
   const q = (els.searchInput.value || "").trim().toLowerCase();
   const rows = !q ? cachedRows : cachedRows.filter((r) => {
@@ -331,12 +345,6 @@ function exportCsv() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-}
-
-function csvEscape(v) {
-  const s = String(v ?? "");
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
 }
 
 /* ---------------- Load ---------------- */
@@ -387,6 +395,19 @@ function applyRange(mode) {
   loadAll();
 }
 
+function wireDashboardOnce() {
+  if (dashboardWired) return;
+  dashboardWired = true;
+
+  document.querySelectorAll(".pill").forEach((b) => {
+    b.addEventListener("click", () => applyRange(b.dataset.range));
+  });
+
+  els.btnRefresh.addEventListener("click", () => loadAll());
+  els.btnExport.addEventListener("click", () => exportCsv());
+  els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+}
+
 /* ---------------- Events ---------------- */
 
 els.loginForm.addEventListener("submit", async (e) => {
@@ -414,7 +435,7 @@ els.loginForm.addEventListener("submit", async (e) => {
 
     rememberAuthIfWanted(candidate, remember);
 
-    // Show dashboard
+    // Switch to dashboard mode (this also fully hides login view)
     showDashboard();
 
     // default range
@@ -422,16 +443,7 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
-    // wire pills
-    document.querySelectorAll(".pill").forEach((b) => {
-      b.addEventListener("click", () => applyRange(b.dataset.range));
-    });
-
-    // wire dashboard buttons
-    els.btnRefresh.addEventListener("click", () => loadAll());
-    els.btnExport.addEventListener("click", () => exportCsv());
-    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
-
+    wireDashboardOnce();
     await loadAll();
   } catch (err) {
     clearAuth();
@@ -439,7 +451,7 @@ els.loginForm.addEventListener("submit", async (e) => {
     showLogin();
   } finally {
     els.btnSubmitLogin.disabled = false;
-    els.btnSubmitLogin.textContent = "Continue";
+    els.btnSubmitLogin.textContent = "Login Now";
   }
 });
 
@@ -454,18 +466,14 @@ els.btnLogout.addEventListener("click", () => {
   const remembered = loadRememberedAuth();
   if (remembered) {
     AUTH_HEADER = remembered;
+
     showDashboard();
 
     const t = todayYYYYMMDD();
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
-    document.querySelectorAll(".pill").forEach((b) => {
-      b.addEventListener("click", () => applyRange(b.dataset.range));
-    });
-    els.btnRefresh.addEventListener("click", () => loadAll());
-    els.btnExport.addEventListener("click", () => exportCsv());
-    els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+    wireDashboardOnce();
 
     loadAll().catch(() => {
       clearAuth();
