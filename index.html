@@ -24,15 +24,29 @@
 
         <div id="loginError" class="login-error hidden"></div>
 
-        <form id="loginForm" class="login-form">
+        <form id="loginForm" class="login-form" autocomplete="on">
           <div class="field">
             <label for="loginUser">Username</label>
-            <input id="loginUser" type="text" autocomplete="username" placeholder="username" />
+            <input
+              id="loginUser"
+              name="username"
+              type="text"
+              autocomplete="username"
+              placeholder="username"
+              required
+            />
           </div>
 
           <div class="field">
             <label for="loginPass">Password</label>
-            <input id="loginPass" type="password" autocomplete="current-password" placeholder="password" />
+            <input
+              id="loginPass"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              placeholder="password"
+              required
+            />
           </div>
 
           <label class="checkbox">
