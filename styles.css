@@ -12,8 +12,44 @@ html, body {
 }
 
 img { max-width: 100%; height: auto; }
-
 .hidden { display: none !important; }
+
+/* =========================================================
+   MODE SWITCH (LOGIN vs APP)
+========================================================= */
+
+/* LOGIN MODE */
+body.mode-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* In login mode, the main dashboard container should NOT apply */
+body.mode-login .container {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Center login view */
+body.mode-login #loginView {
+  width: 100%;
+  min-height: 100vh;
+  padding: 56px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* APP MODE */
+body.mode-app {
+  display: block;
+}
 
 /* =========================================================
    BUTTONS
@@ -36,41 +72,9 @@ img { max-width: 100%; height: auto; }
 .btn-secondary:hover { background: #cfc9bf; }
 
 /* =========================================================
-   LOGIN MODE — ONLY WHEN LOGIN IS VISIBLE
-   (This prevents messing up the dashboard after login.)
+   LOGIN PAGE LOOK
 ========================================================= */
-
-/* Only trigger if #loginView exists AND is NOT hidden */
-body:has(#loginView:not(.hidden)) {
-  min-height: 100vh;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-/* Keep dashboard container from being forced full-bleed */
-body:has(#loginView:not(.hidden)) .container {
-  max-width: 100% !important;
-  width: 100% !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Center login layout */
-body:has(#loginView:not(.hidden)) #loginView {
-  width: 100% !important;
-  min-height: 100vh !important;
-  padding: 56px 16px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 16px !important;
-}
-
-/* Powered by row */
-body:has(#loginView:not(.hidden)) .powered,
-body:has(#loginView:not(.hidden)) .powered-by {
+.powered, .powered-by {
   font-size: 13px;
   font-weight: 700;
   color: rgba(31,42,36,.85);
@@ -79,8 +83,8 @@ body:has(#loginView:not(.hidden)) .powered-by {
 .foxdent { color: #6f8f7a; font-weight: 900; }
 
 /* Small centered logo */
-body:has(#loginView:not(.hidden)) img.logo,
-body:has(#loginView:not(.hidden)) img[alt*="FoxDent" i] {
+body.mode-login img.logo,
+body.mode-login img[alt*="FoxDent" i] {
   width: 54px !important;
   height: 54px !important;
   max-width: 54px !important;
@@ -91,36 +95,35 @@ body:has(#loginView:not(.hidden)) img[alt*="FoxDent" i] {
 }
 
 /* Login card */
-body:has(#loginView:not(.hidden)) .login-card,
-body:has(#loginView:not(.hidden)) #loginCard,
-body:has(#loginView:not(.hidden)) form#loginForm {
-  width: 100% !important;
-  max-width: 420px !important;
-  background: rgba(255,255,255,.88) !important;
-  border: 2px solid rgba(111,143,122,.18) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 14px 30px rgba(0,0,0,.10) !important;
-  padding: 22px 22px 18px !important;
-  text-align: center !important;
-  margin: 0 auto !important;
+body.mode-login .login-card,
+body.mode-login #loginCard,
+body.mode-login form#loginForm {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255,255,255,.88);
+  border: 2px solid rgba(111,143,122,.18);
+  border-radius: 10px;
+  box-shadow: 0 14px 30px rgba(0,0,0,.10);
+  padding: 22px 22px 18px;
+  text-align: center;
+  margin: 0 auto;
 }
 
-/* Titles */
-body:has(#loginView:not(.hidden)) h1 {
+body.mode-login h1 {
   margin: 0 0 2px 0;
   font-size: 22px;
   font-weight: 900;
 }
-body:has(#loginView:not(.hidden)) .login-sub,
-body:has(#loginView:not(.hidden)) h2 {
+
+body.mode-login .login-sub,
+body.mode-login h2 {
   margin: 0 0 16px 0;
   font-size: 12px;
   font-weight: 700;
   color: rgba(31,42,36,.75);
 }
 
-/* Labels + inputs */
-body:has(#loginView:not(.hidden)) label {
+body.mode-login label {
   display: block;
   font-size: 11px;
   font-weight: 800;
@@ -128,8 +131,8 @@ body:has(#loginView:not(.hidden)) label {
   text-align: center;
 }
 
-body:has(#loginView:not(.hidden)) input[type="text"],
-body:has(#loginView:not(.hidden)) input[type="password"] {
+body.mode-login input[type="text"],
+body.mode-login input[type="password"] {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -143,26 +146,24 @@ body:has(#loginView:not(.hidden)) input[type="password"] {
   margin: 0 auto;
 }
 
-body:has(#loginView:not(.hidden)) input:focus {
+body.mode-login input:focus {
   border-color: rgba(111,143,122,.65);
   box-shadow: 0 0 0 3px rgba(111,143,122,.15);
 }
 
-/* Remember row */
-body:has(#loginView:not(.hidden)) .remember,
-body:has(#loginView:not(.hidden)) .checkbox {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
+body.mode-login .remember,
+body.mode-login .checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   gap: 8px;
   margin: 12px 0 14px;
   font-size: 11px;
   color: rgba(31,42,36,.8);
 }
 
-/* Continue button */
-body:has(#loginView:not(.hidden)) button,
-body:has(#loginView:not(.hidden)) input[type="submit"] {
+body.mode-login button,
+body.mode-login input[type="submit"] {
   width: 78%;
   min-width: 240px;
   max-width: 330px;
@@ -177,9 +178,8 @@ body:has(#loginView:not(.hidden)) input[type="submit"] {
   margin: 6px auto 0;
 }
 
-/* Terms */
-body:has(#loginView:not(.hidden)) .terms,
-body:has(#loginView:not(.hidden)) small {
+body.mode-login .terms,
+body.mode-login small {
   display: block;
   margin-top: 14px;
   font-size: 11px;
@@ -188,7 +188,7 @@ body:has(#loginView:not(.hidden)) small {
 }
 
 /* =========================================================
-   DASHBOARD (normal portal layout)
+   DASHBOARD LAYOUT
 ========================================================= */
 .container {
   max-width: 1200px;
@@ -241,7 +241,7 @@ body:has(#loginView:not(.hidden)) small {
   border: 1px solid #d7d0c6;
 }
 
-.quick { display: flex; gap: 6px; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; }
 .pill {
   background: #eee8de;
   border: 1px solid #d7d0c6;
@@ -279,17 +279,16 @@ body:has(#loginView:not(.hidden)) small {
 .dot-new { background: #6f8f7a; }
 .dot-return { background: #2f7c9a; }
 
-.table-card { margin-top: 10px; }
-
 .table-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
   margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
-.table-tools { display: flex; gap: 8px; }
+.table-tools { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .search {
   padding: 8px 10px;
