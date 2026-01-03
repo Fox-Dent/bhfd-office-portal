@@ -196,13 +196,12 @@ body.mode-app {
   min-height: 100vh;
 }
 
-/* Sidebar */
 .sidebar {
   position: fixed;
   left: 0;
   top: 0;
   height: 100vh;
-  width: 72px;              /* collapsed */
+  width: 72px;
   background: #fff;
   border-right: 1px solid #e3ddd3;
   box-shadow: 10px 0 24px rgba(0,0,0,.06);
@@ -213,9 +212,7 @@ body.mode-app {
   transition: width .18s ease;
 }
 
-.sidebar.open {
-  width: 240px;             /* expanded */
-}
+.sidebar.open { width: 240px; }
 
 .menu-btn {
   width: 44px;
@@ -231,6 +228,7 @@ body.mode-app {
 
 .menu-btn:hover { filter: brightness(.98); }
 
+/* ✅ Hamburger icon (3 lines) */
 .burger {
   width: 18px;
   height: 12px;
@@ -249,16 +247,14 @@ body.mode-app {
   border-radius: 2px;
 }
 .burger::before { top: 0; }
-.burger::after { bottom: 0; }
 .burger span { top: 5px; }
+.burger::after { bottom: 0; }
 
-/* Brand area inside sidebar */
 .sidebar-brand {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 6px 8px 12px;
-  margin-top: 2px;
   overflow: hidden;
 }
 
@@ -293,7 +289,6 @@ body.mode-app {
   margin-top: 2px;
 }
 
-/* Nav */
 .nav {
   display: flex;
   flex-direction: column;
@@ -304,7 +299,7 @@ body.mode-app {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
   padding: 12px 12px;
   border-radius: 12px;
   text-decoration: none;
@@ -323,17 +318,15 @@ body.mode-app {
 .nav-item.active {
   background: rgba(111,143,122,.12);
   border-color: rgba(111,143,122,.22);
-  color: #1f2a24;
 }
 
-/* Hide nav text when collapsed */
+/* collapse behavior */
 .sidebar:not(.open) .nav-item {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
 }
 
-/* Footer in sidebar */
 .sidebar-foot {
   margin-top: auto;
   padding: 10px 6px 6px;
@@ -343,11 +336,8 @@ body.mode-app {
   width: 100%;
   display: none;
 }
-.sidebar.open .btn-logout-side {
-  display: block;
-}
+.sidebar.open .btn-logout-side { display: block; }
 
-/* Overlay for mobile when sidebar open */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -493,19 +483,11 @@ tbody td {
   margin-top: 18px;
 }
 
-/* Simple headings for other routes */
 .simple-head { margin: 6px 0 14px; }
 .simple-title { margin: 0; font-size: 22px; font-weight: 900; }
 .simple-sub { margin: 6px 0 0; color: rgba(31,42,36,.75); font-weight: 650; }
 
-/* Mobile behavior */
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
-
-  .app-main { margin-left: 72px; }
-
-  /* On mobile, expanded sidebar overlays content */
-  .sidebar.open {
-    width: 260px;
-  }
+  .sidebar.open { width: 260px; }
 }
