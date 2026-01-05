@@ -33,11 +33,16 @@ const els = {
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
 
-  // sidebar + routing
+  // sidebar
   sidebar: document.getElementById("sidebar"),
   btnMenu: document.getElementById("btnMenu"),
   sidebarOverlay: document.getElementById("sidebarOverlay"),
   btnLogoutSide: document.getElementById("btnLogoutSide"),
+
+  // route sections
+  routeDashboard: document.getElementById("route-dashboard"),
+  routeAnalytics: document.getElementById("route-analytics"),
+  routeCommunication: document.getElementById("route-communication"),
 };
 
 let cachedRows = [];
@@ -46,13 +51,10 @@ let uiWired = false;
 /* ---------------- View helpers ---------------- */
 
 function showLogin() {
-  // hard-hide dashboard
   els.dashboardView.classList.add("hidden");
-  // show login
   els.loginView.classList.remove("hidden");
   setLoginError("");
   setStatus("Not connected", "");
-
   setTimeout(() => {
     if (els.loginUser.value) els.loginPass.focus();
     else els.loginUser.focus();
@@ -60,7 +62,7 @@ function showLogin() {
 }
 
 function showDashboard() {
-  // hard-hide login so it cannot push anything
+  // IMPORTANT: hard-hide login so it can’t push layout
   els.loginView.classList.add("hidden");
   els.dashboardView.classList.remove("hidden");
 }
@@ -229,7 +231,6 @@ function renderTable(rows) {
 }
 
 function buildLineSeries(bookings, start, end) {
-  // book-count by Date Booked (created_at)
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -404,23 +405,21 @@ function applyRange(mode) {
   loadAll();
 }
 
-/* ---------------- Sidebar UI ---------------- */
+/* ---------------- Sidebar helpers ---------------- */
 
 function openSidebar() {
   els.sidebar?.classList.add("open");
-  if (els.sidebarOverlay) els.sidebarOverlay.classList.remove("hidden");
+  els.sidebarOverlay?.classList.remove("hidden");
 }
 
 function closeSidebar() {
   els.sidebar?.classList.remove("open");
-  if (els.sidebarOverlay) els.sidebarOverlay.classList.add("hidden");
+  els.sidebarOverlay?.classList.add("hidden");
 }
 
 function toggleSidebar() {
   if (!els.sidebar) return;
-  const isOpen = els.sidebar.classList.contains("open");
-  if (isOpen) closeSidebar();
-  else openSidebar();
+  els.sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
 }
 
 function setActiveNav(route) {
@@ -429,16 +428,29 @@ function setActiveNav(route) {
   });
 }
 
-/* (Optional future routing): right now it just highlights */
-function wireSidebarNav() {
-  document.querySelectorAll(".nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
-      setActiveNav(item.dataset.route);
+/* ---------------- Routing ---------------- */
 
-      // On small screens, close after click
-      if (window.innerWidth <= 900) closeSidebar();
-    });
-  });
+function showRoute(route) {
+  const r = route || "dashboard";
+
+  // show/hide sections
+  if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
+  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", r !== "analytics");
+  if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
+
+  setActiveNav(r);
+
+  // optional: close sidebar on small screens after navigating
+  if (window.innerWidth <= 900) closeSidebar();
+
+  // if returning to dashboard, keep status/live info updated (don’t force reload)
+  // (no-op, but could call loadAll() if you ever want)
+}
+
+function parseHashRoute() {
+  const h = (location.hash || "").replace("#/", "").trim();
+  if (h === "analytics" || h === "communication" || h === "dashboard") return h;
+  return "dashboard";
 }
 
 /* ---------------- One-time wiring ---------------- */
@@ -447,10 +459,21 @@ function wireDashboardOnce() {
   if (uiWired) return;
   uiWired = true;
 
-  // Sidebar controls
-  if (els.btnMenu) els.btnMenu.addEventListener("click", toggleSidebar);
-  if (els.sidebarOverlay) els.sidebarOverlay.addEventListener("click", closeSidebar);
-  wireSidebarNav();
+  // sidebar controls
+  els.btnMenu?.addEventListener("click", toggleSidebar);
+  els.sidebarOverlay?.addEventListener("click", closeSidebar);
+
+  // nav click (route)
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      const route = item.dataset.route || "dashboard";
+      // update hash -> triggers hashchange too
+      location.hash = `#/${route}`;
+    });
+  });
+
+  // hash routing
+  window.addEventListener("hashchange", () => showRoute(parseHashRoute()));
 
   // pills
   document.querySelectorAll(".pill").forEach((b) => {
@@ -458,24 +481,20 @@ function wireDashboardOnce() {
   });
 
   // dashboard buttons
-  els.btnRefresh.addEventListener("click", () => loadAll());
-  els.btnExport.addEventListener("click", () => exportCsv());
-  els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+  els.btnRefresh?.addEventListener("click", () => loadAll());
+  els.btnExport?.addEventListener("click", () => exportCsv());
+  els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
 
-  // logout (both places)
-  els.btnLogout.addEventListener("click", () => {
+  // logout both buttons
+  const doLogout = () => {
     clearAuth();
     closeSidebar();
+    location.hash = "#/dashboard";
     showLogin();
-  });
+  };
 
-  if (els.btnLogoutSide) {
-    els.btnLogoutSide.addEventListener("click", () => {
-      clearAuth();
-      closeSidebar();
-      showLogin();
-    });
-  }
+  els.btnLogout?.addEventListener("click", doLogout);
+  els.btnLogoutSide?.addEventListener("click", doLogout);
 }
 
 /* ---------------- Login submit ---------------- */
@@ -500,12 +519,11 @@ els.loginForm.addEventListener("submit", async (e) => {
     const candidate = makeBasicAuth(user, pass);
     AUTH_HEADER = candidate;
 
-    // Validate credentials with a quick call
+    // validate credentials
     await api(`/office/bookings?limit=1`);
 
     rememberAuthIfWanted(candidate, remember);
 
-    // Show dashboard
     showDashboard();
 
     // default range
@@ -513,11 +531,11 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
-    // Wire once (sidebar + dashboard events)
     wireDashboardOnce();
 
-    // Default active nav
-    setActiveNav("dashboard");
+    // route to whatever hash is set, default dashboard
+    const routeNow = parseHashRoute();
+    showRoute(routeNow);
 
     await loadAll();
   } catch (err) {
@@ -544,7 +562,7 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
-    setActiveNav("dashboard");
+    showRoute(parseHashRoute());
 
     loadAll().catch(() => {
       clearAuth();
