@@ -21,7 +21,6 @@ const els = {
 
   // dashboard actions
   btnLogout: document.getElementById("btnLogout"),
-  btnLogoutSide: document.getElementById("btnLogoutSide"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
@@ -34,101 +33,38 @@ const els = {
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
 
-  // sidebar
+  // sidebar + routing
   sidebar: document.getElementById("sidebar"),
   btnMenu: document.getElementById("btnMenu"),
   sidebarOverlay: document.getElementById("sidebarOverlay"),
-
-  // routes
-  routeDashboard: document.getElementById("route-dashboard"),
-  routeAnalytics: document.getElementById("route-analytics"),
-  routeCommunication: document.getElementById("route-communication"),
+  btnLogoutSide: document.getElementById("btnLogoutSide"),
 };
 
 let cachedRows = [];
-let dashboardWired = false;
+let uiWired = false;
 
-/* ===================== UI MODE ===================== */
-function setMode(mode) {
-  document.body.classList.remove("mode-login", "mode-app");
-  document.body.classList.add(mode === "login" ? "mode-login" : "mode-app");
-}
+/* ---------------- View helpers ---------------- */
 
 function showLogin() {
-  setMode("login");
+  // hard-hide dashboard
   els.dashboardView.classList.add("hidden");
+  // show login
   els.loginView.classList.remove("hidden");
   setLoginError("");
   setStatus("Not connected", "");
-  closeSidebar();
+
   setTimeout(() => {
     if (els.loginUser.value) els.loginPass.focus();
     else els.loginUser.focus();
   }, 0);
 }
 
-function showAppShell() {
-  setMode("app");
+function showDashboard() {
+  // hard-hide login so it cannot push anything
   els.loginView.classList.add("hidden");
   els.dashboardView.classList.remove("hidden");
 }
 
-/* ===================== SIDEBAR ===================== */
-function openSidebar() {
-  els.sidebar.classList.add("open");
-  els.btnMenu.setAttribute("aria-expanded", "true");
-  // overlay only matters when sidebar open (especially on mobile)
-  els.sidebarOverlay.classList.remove("hidden");
-  els.sidebarOverlay.setAttribute("aria-hidden", "false");
-}
-
-function closeSidebar() {
-  els.sidebar.classList.remove("open");
-  els.btnMenu.setAttribute("aria-expanded", "false");
-  els.sidebarOverlay.classList.add("hidden");
-  els.sidebarOverlay.setAttribute("aria-hidden", "true");
-}
-
-function toggleSidebar() {
-  if (els.sidebar.classList.contains("open")) closeSidebar();
-  else openSidebar();
-}
-
-/* ===================== ROUTING ===================== */
-function setActiveNav(route) {
-  document.querySelectorAll(".nav-item").forEach((a) => {
-    a.classList.toggle("active", a.dataset.route === route);
-  });
-}
-
-function showRoute(route) {
-  // Hide all
-  els.routeDashboard.classList.add("hidden");
-  els.routeAnalytics.classList.add("hidden");
-  els.routeCommunication.classList.add("hidden");
-
-  if (route === "analytics") els.routeAnalytics.classList.remove("hidden");
-  else if (route === "communication") els.routeCommunication.classList.remove("hidden");
-  else els.routeDashboard.classList.remove("hidden"); // default
-
-  setActiveNav(route);
-}
-
-function currentRoute() {
-  const h = (location.hash || "").toLowerCase();
-  if (h.startsWith("#/analytics")) return "analytics";
-  if (h.startsWith("#/communication")) return "communication";
-  return "dashboard";
-}
-
-function onRouteChange() {
-  const r = currentRoute();
-  showRoute(r);
-  // nice behavior: close menu after selecting route
-  closeSidebar();
-}
-
-/* ===================== HELPERS ===================== */
 function setLoginError(msg) {
   els.loginError.textContent = msg || "";
   els.loginError.classList.toggle("hidden", !msg);
@@ -139,6 +75,8 @@ function setStatus(text, mode = "") {
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
 }
+
+/* ---------------- Date helpers ---------------- */
 
 function todayYYYYMMDD() {
   const d = new Date();
@@ -164,6 +102,8 @@ function monthStart(dateStr) {
   return `${y}-${m}-01`;
 }
 
+/* ---------------- Auth helpers ---------------- */
+
 function makeBasicAuth(user, pass) {
   const token = btoa(`${user}:${pass}`);
   return `Basic ${token}`;
@@ -184,7 +124,8 @@ function clearAuth() {
   sessionStorage.removeItem(AUTH_STORAGE_KEY);
 }
 
-/* ===================== API ===================== */
+/* ---------------- API ---------------- */
+
 async function api(path) {
   if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
 
@@ -203,12 +144,13 @@ async function api(path) {
 
   const data = await res.json().catch(() => null);
   if (!data || !data.ok) {
-    throw new Error(data?.error ? data.error : `API error (${res.status})`);
+    throw new Error((data && data.error) ? data.error : `API error (${res.status})`);
   }
   return data;
 }
 
-/* ===================== RENDER HELPERS ===================== */
+/* ---------------- Render helpers ---------------- */
+
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
   if (x === "adult_cleaning") return "Adult Cleaning";
@@ -287,6 +229,7 @@ function renderTable(rows) {
 }
 
 function buildLineSeries(bookings, start, end) {
+  // book-count by Date Booked (created_at)
   const s = start || addDays(todayYYYYMMDD(), -29);
   const e = end || todayYYYYMMDD();
 
@@ -413,7 +356,8 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
-/* ===================== LOAD ===================== */
+/* ---------------- Load ---------------- */
+
 async function loadAll() {
   setStatus("Loading…", "");
   try {
@@ -460,33 +404,81 @@ function applyRange(mode) {
   loadAll();
 }
 
-function wireDashboardOnce() {
-  if (dashboardWired) return;
-  dashboardWired = true;
+/* ---------------- Sidebar UI ---------------- */
 
+function openSidebar() {
+  els.sidebar?.classList.add("open");
+  if (els.sidebarOverlay) els.sidebarOverlay.classList.remove("hidden");
+}
+
+function closeSidebar() {
+  els.sidebar?.classList.remove("open");
+  if (els.sidebarOverlay) els.sidebarOverlay.classList.add("hidden");
+}
+
+function toggleSidebar() {
+  if (!els.sidebar) return;
+  const isOpen = els.sidebar.classList.contains("open");
+  if (isOpen) closeSidebar();
+  else openSidebar();
+}
+
+function setActiveNav(route) {
+  document.querySelectorAll(".nav-item").forEach((n) => {
+    n.classList.toggle("active", n.dataset.route === route);
+  });
+}
+
+/* (Optional future routing): right now it just highlights */
+function wireSidebarNav() {
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      setActiveNav(item.dataset.route);
+
+      // On small screens, close after click
+      if (window.innerWidth <= 900) closeSidebar();
+    });
+  });
+}
+
+/* ---------------- One-time wiring ---------------- */
+
+function wireDashboardOnce() {
+  if (uiWired) return;
+  uiWired = true;
+
+  // Sidebar controls
+  if (els.btnMenu) els.btnMenu.addEventListener("click", toggleSidebar);
+  if (els.sidebarOverlay) els.sidebarOverlay.addEventListener("click", closeSidebar);
+  wireSidebarNav();
+
+  // pills
   document.querySelectorAll(".pill").forEach((b) => {
     b.addEventListener("click", () => applyRange(b.dataset.range));
   });
 
+  // dashboard buttons
   els.btnRefresh.addEventListener("click", () => loadAll());
   els.btnExport.addEventListener("click", () => exportCsv());
   els.searchInput.addEventListener("input", () => renderTable(cachedRows));
+
+  // logout (both places)
+  els.btnLogout.addEventListener("click", () => {
+    clearAuth();
+    closeSidebar();
+    showLogin();
+  });
+
+  if (els.btnLogoutSide) {
+    els.btnLogoutSide.addEventListener("click", () => {
+      clearAuth();
+      closeSidebar();
+      showLogin();
+    });
+  }
 }
 
-/* ===================== LOGOUT ===================== */
-function doLogout() {
-  clearAuth();
-  showLogin();
-  location.hash = "#/dashboard";
-}
-
-/* ===================== EVENTS ===================== */
-els.btnMenu?.addEventListener("click", toggleSidebar);
-els.sidebarOverlay?.addEventListener("click", closeSidebar);
-window.addEventListener("hashchange", onRouteChange);
-
-els.btnLogout?.addEventListener("click", doLogout);
-els.btnLogoutSide?.addEventListener("click", doLogout);
+/* ---------------- Login submit ---------------- */
 
 els.loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -508,22 +500,24 @@ els.loginForm.addEventListener("submit", async (e) => {
     const candidate = makeBasicAuth(user, pass);
     AUTH_HEADER = candidate;
 
-    // Validate credentials
+    // Validate credentials with a quick call
     await api(`/office/bookings?limit=1`);
+
     rememberAuthIfWanted(candidate, remember);
 
-    showAppShell();
+    // Show dashboard
+    showDashboard();
 
     // default range
     const t = todayYYYYMMDD();
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
+    // Wire once (sidebar + dashboard events)
     wireDashboardOnce();
 
-    // route init
-    if (!location.hash) location.hash = "#/dashboard";
-    onRouteChange();
+    // Default active nav
+    setActiveNav("dashboard");
 
     await loadAll();
   } catch (err) {
@@ -536,21 +530,21 @@ els.loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-/* ===================== INIT ===================== */
+/* ---------------- Init ---------------- */
+
 (function init() {
   const remembered = loadRememberedAuth();
+
   if (remembered) {
     AUTH_HEADER = remembered;
-    showAppShell();
+    showDashboard();
 
     const t = todayYYYYMMDD();
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
-
-    if (!location.hash) location.hash = "#/dashboard";
-    onRouteChange();
+    setActiveNav("dashboard");
 
     loadAll().catch(() => {
       clearAuth();
