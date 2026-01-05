@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>BHFD Office Portal • FoxDent</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
 
@@ -12,7 +12,7 @@
     <!-- ✅ LOGIN PAGE (shows first) -->
     <main id="loginView" class="login-page">
       <div class="login-top">
-        <img src="./FoxDentLogo.png" alt="FoxDent" class="login-logo" />
+        <img src="FoxDentLogo.png" alt="FoxDent" class="login-logo" />
         <div class="login-powered">
           Powered by <span class="foxdent">FoxDent</span>
         </div>
@@ -49,9 +49,9 @@
       </section>
     </main>
 
-    <!-- ✅ DASHBOARD (hidden until logged in) -->
+    <!-- ✅ APP (hidden until logged in) -->
     <div id="dashboardView" class="hidden">
-      <!-- Sidebar overlay (mobile) -->
+      <!-- Overlay for mobile sidebar -->
       <div id="sidebarOverlay" class="sidebar-overlay hidden"></div>
 
       <!-- SIDEBAR -->
@@ -61,7 +61,7 @@
         </button>
 
         <div class="sidebar-brand">
-          <img src="./FoxDentLogo.png" alt="FoxDent" class="sidebar-logo" />
+          <img src="FoxDentLogo.png" alt="FoxDent" class="sidebar-logo" />
           <div class="sidebar-title">
             <div class="sidebar-powered">
               Powered by <span class="foxdent">FoxDent</span>
@@ -71,18 +71,18 @@
         </div>
 
         <nav class="nav">
-          <a class="nav-item active" data-route="dashboard">
-            <img src="./icons/foxdentdash.png" class="nav-icon" alt="" aria-hidden="true" />
+          <a class="nav-item active" href="#/dashboard" data-route="dashboard">
+            <img src="icons/foxdentdash.png" class="nav-icon" alt="" aria-hidden="true" />
             <span class="nav-label">Dashboard</span>
           </a>
 
-          <a class="nav-item" data-route="analytics">
-            <img src="./icons/foxdentanalytic.png" class="nav-icon" alt="" aria-hidden="true" />
+          <a class="nav-item" href="#/analytics" data-route="analytics">
+            <img src="icons/foxdentanalytic.png" class="nav-icon" alt="" aria-hidden="true" />
             <span class="nav-label">Analytics</span>
           </a>
 
-          <a class="nav-item" data-route="communication">
-            <img src="./icons/foxdentcomm.png" class="nav-icon" alt="" aria-hidden="true" />
+          <a class="nav-item" href="#/communication" data-route="communication">
+            <img src="icons/foxdentcomm.png" class="nav-icon" alt="" aria-hidden="true" />
             <span class="nav-label">Communication</span>
           </a>
         </nav>
@@ -96,123 +96,152 @@
 
       <!-- MAIN APP CONTENT -->
       <div class="app-main">
-        <div class="container">
-          <header class="header">
-            <div class="brand">
-              <div class="brand-left">
-                <img src="./FoxDentLogo.png" alt="FoxDent" class="logo" />
-                <div class="brand-stack">
-                  <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
-                  <div class="welcome">Welcome, Brook Hollow Family Dentistry</div>
-                  <div class="brand-sub">Office Portal • Online bookings dashboard</div>
+        <!-- ===== DASHBOARD SECTION (your current dashboard stays as-is) ===== -->
+        <section id="route-dashboard">
+          <div class="container">
+            <header class="header">
+              <div class="brand">
+                <div class="brand-left">
+                  <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
+                  <div class="brand-stack">
+                    <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                    <div class="welcome">Welcome, Brook Hollow Family Dentistry</div>
+                    <div class="brand-sub">Office Portal • Online bookings dashboard</div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div class="header-actions">
-              <button id="btnLogout" class="btn btn-secondary" type="button">Logout</button>
-              <button id="btnRefresh" class="btn" type="button">Refresh</button>
-            </div>
-          </header>
+              <div class="header-actions">
+                <button id="btnLogout" class="btn btn-secondary" type="button">Logout</button>
+                <button id="btnRefresh" class="btn" type="button">Refresh</button>
+              </div>
+            </header>
 
-          <section class="filters card">
-            <div class="filters-row">
-              <div class="field">
-                <label for="startDate">Start</label>
-                <input id="startDate" type="date" />
+            <section class="filters card">
+              <div class="filters-row">
+                <div class="field">
+                  <label for="startDate">Start</label>
+                  <input id="startDate" type="date" />
+                </div>
+
+                <div class="field">
+                  <label for="endDate">End</label>
+                  <input id="endDate" type="date" />
+                </div>
+
+                <div class="quick">
+                  <button class="pill" data-range="today" type="button">Today</button>
+                  <button class="pill" data-range="7" type="button">Last 7</button>
+                  <button class="pill" data-range="30" type="button">Last 30</button>
+                  <button class="pill" data-range="mtd" type="button">This Month</button>
+                </div>
+
+                <div class="status">
+                  <span id="statusText" class="status-text">Not connected</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="grid">
+              <div class="card chart-card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Scheduled Appointments</div>
+                    <div class="card-sub" id="scheduledMeta">—</div>
+                  </div>
+                </div>
+                <div class="chart-wrap">
+                  <canvas id="lineChart" height="120"></canvas>
+                </div>
               </div>
 
-              <div class="field">
-                <label for="endDate">End</label>
-                <input id="endDate" type="date" />
+              <div class="card chart-card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">New Patients</div>
+                    <div class="card-sub" id="newMeta">—</div>
+                  </div>
+                </div>
+                <div class="chart-wrap pie">
+                  <canvas id="pieChart" height="160"></canvas>
+                </div>
+                <div class="legend">
+                  <div class="legend-item"><span class="dot dot-new"></span> New Patients</div>
+                  <div class="legend-item"><span class="dot dot-return"></span> Returning Patients</div>
+                </div>
               </div>
+            </section>
 
-              <div class="quick">
-                <button class="pill" data-range="today" type="button">Today</button>
-                <button class="pill" data-range="7" type="button">Last 7</button>
-                <button class="pill" data-range="30" type="button">Last 30</button>
-                <button class="pill" data-range="mtd" type="button">This Month</button>
-              </div>
-
-              <div class="status">
-                <span id="statusText" class="status-text">Not connected</span>
-              </div>
-            </div>
-          </section>
-
-          <section class="grid">
-            <div class="card chart-card">
-              <div class="card-top">
+            <section class="card table-card">
+              <div class="table-head">
                 <div>
-                  <div class="card-title">Scheduled Appointments</div>
-                  <div class="card-sub" id="scheduledMeta">—</div>
+                  <div class="card-title">Online Booking Log</div>
+                  <div class="card-sub">Every successful booking made through the FoxDent scheduler</div>
+                </div>
+
+                <div class="table-tools">
+                  <input id="searchInput" class="search" type="search" placeholder="Search name, type, insurance…" />
+                  <button id="btnExport" class="btn btn-secondary" type="button">Export CSV</button>
                 </div>
               </div>
-              <div class="chart-wrap">
-                <canvas id="lineChart" height="120"></canvas>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date Booked</th>
+                      <th>Patient Name</th>
+                      <th>Patient DOB</th>
+                      <th>Patient Status</th>
+                      <th>Appt Date</th>
+                      <th>Appt Time</th>
+                      <th>Appointment Type</th>
+                      <th>Insurance</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bookingsBody">
+                    <tr>
+                      <td colspan="8" class="empty">No data yet — login and refresh.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <footer class="footer">
+              <span>FoxDent • Brook Hollow Family Dentistry</span>
+            </footer>
+          </div>
+        </section>
+
+        <!-- ===== TEMP ANALYTICS SECTION ===== -->
+        <section id="route-analytics" class="hidden">
+          <div class="container">
+            <div class="card">
+              <div class="card-title">Analytics</div>
+              <div class="card-sub">Coming next — more KPI cards, graphs, and breakdowns.</div>
+              <div style="margin-top:12px; font-size:13px; color:#4a5a51;">
+                This is the temporary Analytics page. We’ll build it to match your reference image.
               </div>
             </div>
+          </div>
+        </section>
 
-            <div class="card chart-card">
-              <div class="card-top">
-                <div>
-                  <div class="card-title">New Patients</div>
-                  <div class="card-sub" id="newMeta">—</div>
-                </div>
-              </div>
-              <div class="chart-wrap pie">
-                <canvas id="pieChart" height="160"></canvas>
-              </div>
-              <div class="legend">
-                <div class="legend-item"><span class="dot dot-new"></span> New Patients</div>
-                <div class="legend-item"><span class="dot dot-return"></span> Returning Patients</div>
+        <!-- ===== TEMP COMMUNICATION SECTION ===== -->
+        <section id="route-communication" class="hidden">
+          <div class="container">
+            <div class="card">
+              <div class="card-title">Communication</div>
+              <div class="card-sub">Coming next — Twilio texting/emailing from the portal.</div>
+              <div style="margin-top:12px; font-size:13px; color:#4a5a51;">
+                This is the temporary Communication page. We’ll add message templates and send logs.
               </div>
             </div>
-          </section>
-
-          <section class="card table-card">
-            <div class="table-head">
-              <div>
-                <div class="card-title">Online Booking Log</div>
-                <div class="card-sub">Every successful booking made through the FoxDent scheduler</div>
-              </div>
-
-              <div class="table-tools">
-                <input id="searchInput" class="search" type="search" placeholder="Search name, type, insurance…" />
-                <button id="btnExport" class="btn btn-secondary" type="button">Export CSV</button>
-              </div>
-            </div>
-
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Date Booked</th>
-                    <th>Patient Name</th>
-                    <th>Patient DOB</th>
-                    <th>Patient Status</th>
-                    <th>Appt Date</th>
-                    <th>Appt Time</th>
-                    <th>Appointment Type</th>
-                    <th>Insurance</th>
-                  </tr>
-                </thead>
-                <tbody id="bookingsBody">
-                  <tr>
-                    <td colspan="8" class="empty">No data yet — login and refresh.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <footer class="footer">
-            <span>FoxDent • Brook Hollow Family Dentistry</span>
-          </footer>
-        </div>
+          </div>
+        </section>
       </div>
     </div>
 
-    <script src="./app.js"></script>
+    <script src="app.js"></script>
   </body>
 </html>
