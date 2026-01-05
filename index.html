@@ -68,37 +68,41 @@
 
     <!-- ✅ APP SHELL (hidden until logged in) -->
     <div id="dashboardView" class="hidden">
-      <!-- Sidebar -->
-      <aside id="sidebar" class="sidebar" aria-label="Primary">
-        <button
-          id="btnMenu"
-          class="menu-btn"
-          type="button"
-          aria-label="Open menu"
-          aria-expanded="false"
-        >
-          <!-- ✅ hamburger icon now properly renders -->
-          <span class="burger" aria-hidden="true"><span></span></span>
-        </button>
+     <!-- SIDEBAR -->
+<aside id="sidebar" class="sidebar">
+  <button id="btnMenu" class="menu-btn" type="button" aria-label="Toggle menu">
+    <span class="burger"><span></span></span>
+  </button>
 
-        <div class="sidebar-brand">
-          <img src="./FoxDentLogo.png" alt="FoxDent" class="sidebar-logo" />
-          <div class="sidebar-title">
-            <div class="sidebar-powered">Powered by <span class="foxdent">FoxDent</span></div>
-            <div class="sidebar-office">BHFD Portal</div>
-          </div>
-        </div>
+  <div class="sidebar-brand">
+    <img src="./FoxDentLogo.png" alt="FoxDent" class="sidebar-logo" />
+    <div class="sidebar-title">
+      <div class="sidebar-powered">Powered by <span class="foxdent">FoxDent</span></div>
+      <div class="sidebar-office">BHFD Portal</div>
+    </div>
+  </div>
 
-        <nav class="nav">
-          <a class="nav-item" href="#/dashboard" data-route="dashboard">Dashboard</a>
-          <a class="nav-item" href="#/analytics" data-route="analytics">Analytics</a>
-          <a class="nav-item" href="#/communication" data-route="communication">Communication</a>
-        </nav>
+  <nav class="nav">
+    <a class="nav-item active" data-route="dashboard">
+      <img src="./icons/foxdentdash.png" class="nav-icon" alt="" />
+      <span class="nav-label">Dashboard</span>
+    </a>
 
-        <div class="sidebar-foot">
-          <button id="btnLogoutSide" class="btn btn-secondary btn-logout-side" type="button">Logout</button>
-        </div>
-      </aside>
+    <a class="nav-item" data-route="analytics">
+      <img src="./icons/foxdentanalytic.png" class="nav-icon" alt="" />
+      <span class="nav-label">Analytics</span>
+    </a>
+
+    <a class="nav-item" data-route="communication">
+      <img src="./icons/foxdentcomm.png" class="nav-icon" alt="" />
+      <span class="nav-label">Communication</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-foot">
+    <button id="btnLogoutSide" class="btn btn-secondary btn-logout-side">Logout</button>
+  </div>
+</aside>
 
       <!-- Mobile overlay -->
       <div id="sidebarOverlay" class="sidebar-overlay hidden" tabindex="-1" aria-hidden="true"></div>
