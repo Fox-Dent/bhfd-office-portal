@@ -13,22 +13,7 @@ html, body {
 
 img { max-width: 100%; height: auto; }
 .hidden { display: none !important; }
-
 .foxdent { color: #6f8f7a; font-weight: 900; }
-
-/* =========================================================
-   MODE SWITCH (LOGIN vs APP)
-========================================================= */
-body.mode-login {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-body.mode-app {
-  display: block;
-}
 
 /* =========================================================
    BUTTONS
@@ -142,7 +127,7 @@ body.mode-app {
   min-width: 240px;
   max-width: 330px;
   padding: 8px 10px;
-  border-radius: 3px;
+  border-radius: 6px;
   border: 1px solid rgba(0,0,0,.10);
   background: rgba(255,255,255,.95);
   font-size: 13px;
@@ -169,7 +154,7 @@ body.mode-app {
   min-width: 240px;
   max-width: 330px;
   padding: 9px 12px;
-  border-radius: 3px;
+  border-radius: 8px;
   border: none;
   background: #6f8f7a;
   color: #fff;
@@ -189,13 +174,14 @@ body.mode-app {
 .linkish { text-decoration: underline; cursor: pointer; }
 
 /* =========================================================
-   APP SHELL: SIDEBAR + MAIN
+   APP SHELL (SIDEBAR + MAIN)
 ========================================================= */
 .app-main {
-  margin-left: 72px; /* collapsed sidebar width */
+  margin-left: 72px; /* collapsed width */
   min-height: 100vh;
 }
 
+/* Sidebar base */
 .sidebar {
   position: fixed;
   left: 0;
@@ -214,6 +200,7 @@ body.mode-app {
 
 .sidebar.open { width: 240px; }
 
+/* Hamburger button */
 .menu-btn {
   width: 44px;
   height: 44px;
@@ -225,10 +212,9 @@ body.mode-app {
   place-items: center;
   margin: 4px auto 10px;
 }
-
 .menu-btn:hover { filter: brightness(.98); }
 
-/* ✅ Hamburger icon (3 lines) */
+/* Hamburger icon (3 lines) */
 .burger {
   width: 18px;
   height: 12px;
@@ -250,6 +236,7 @@ body.mode-app {
 .burger span { top: 5px; }
 .burger::after { bottom: 0; }
 
+/* Brand area */
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -282,13 +269,13 @@ body.mode-app {
   font-weight: 800;
   color: rgba(31,42,36,.8);
 }
-
 .sidebar-office {
   font-size: 13px;
   font-weight: 900;
   margin-top: 2px;
 }
 
+/* Nav items */
 .nav {
   display: flex;
   flex-direction: column;
@@ -299,34 +286,49 @@ body.mode-app {
 .nav-item {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 12px 12px;
+  gap: 14px;
+  padding: 12px 14px;
   border-radius: 12px;
-  text-decoration: none;
-  color: #1f2a24;
   font-weight: 800;
+  color: #1f2a24;
+  cursor: pointer;
+  text-decoration: none;
   border: 1px solid transparent;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
 .nav-item:hover {
-  background: #f7f3ec;
+  background: #f3efe8;
   border-color: #e3ddd3;
 }
 
 .nav-item.active {
-  background: rgba(111,143,122,.12);
-  border-color: rgba(111,143,122,.22);
+  background: rgba(111,143,122,.15);
+  border-color: rgba(111,143,122,.3);
 }
 
-/* collapse behavior */
+/* Icon images */
+.nav-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Label text */
+.nav-label {
+  white-space: nowrap;
+}
+
+/* Collapsed state = icons only, centered */
 .sidebar:not(.open) .nav-item {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 12px 0;
+}
+.sidebar:not(.open) .nav-label {
+  display: none;
 }
 
+/* Logout bottom area */
 .sidebar-foot {
   margin-top: auto;
   padding: 10px 6px 6px;
@@ -336,8 +338,11 @@ body.mode-app {
   width: 100%;
   display: none;
 }
-.sidebar.open .btn-logout-side { display: block; }
+.sidebar.open .btn-logout-side {
+  display: block;
+}
 
+/* Mobile overlay */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -346,7 +351,7 @@ body.mode-app {
 }
 
 /* =========================================================
-   DASHBOARD (your existing styles)
+   DASHBOARD LAYOUT (your existing styles)
 ========================================================= */
 .container {
   max-width: 1200px;
@@ -482,10 +487,6 @@ tbody td {
   color: #6b776f;
   margin-top: 18px;
 }
-
-.simple-head { margin: 6px 0 14px; }
-.simple-title { margin: 0; font-size: 22px; font-weight: 900; }
-.simple-sub { margin: 6px 0 0; color: rgba(31,42,36,.75); font-weight: 650; }
 
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
