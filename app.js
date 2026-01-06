@@ -43,6 +43,11 @@ const els = {
   routeDashboard: document.getElementById("route-dashboard"),
   routeAnalytics: document.getElementById("route-analytics"),
   routeCommunication: document.getElementById("route-communication"),
+
+  // delete controls (NEW)
+  selectAll: document.getElementById("selectAll"),
+  btnDeleteSelected: document.getElementById("btnDeleteSelected"),
+  selectedCount: document.getElementById("selectedCount"),
 };
 
 let cachedRows = [];
@@ -151,6 +156,31 @@ async function api(path) {
   return data;
 }
 
+async function apiPost(path, bodyObj) {
+  if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
+
+  const res = await fetch(`${OFFICE_API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: AUTH_HEADER,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(bodyObj || {}),
+  });
+
+  if (res.status === 401) {
+    clearAuth();
+    throw new Error("Unauthorized (wrong credentials).");
+  }
+
+  const data = await res.json().catch(() => null);
+  if (!data || !data.ok) {
+    throw new Error((data && data.error) ? data.error : `API error (${res.status})`);
+  }
+  return data;
+}
+
 /* ---------------- Render helpers ---------------- */
 
 function apptTypeLabel(t) {
@@ -166,7 +196,7 @@ function insuranceLabel(row) {
   const ins = row.insurance || row.insurance_carrier || row.insCarrier || row.carrier || "";
   const noIns = row.no_insurance ?? row.noInsurance ?? null;
   if (String(ins).trim()) return String(ins).trim();
-  if (noIns === true) return "Self-Pay";
+  if (noIns === true || noIns === 1) return "Self-Pay";
   return "—";
 }
 
@@ -185,6 +215,46 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+/* ---------------- Selection helpers (NEW) ---------------- */
+
+function getSelectedIds() {
+  const out = [];
+  document.querySelectorAll('input.row-select[type="checkbox"]:checked').forEach((cb) => {
+    const id = cb.getAttribute("data-id");
+    if (id) out.push(id);
+  });
+  return out;
+}
+
+function updateSelectedUI() {
+  const ids = getSelectedIds();
+  const n = ids.length;
+
+  if (els.selectedCount) els.selectedCount.textContent = `${n} selected`;
+  if (els.btnDeleteSelected) els.btnDeleteSelected.disabled = n === 0;
+
+  const boxes = Array.from(document.querySelectorAll('input.row-select[type="checkbox"]'));
+  const checked = boxes.filter((b) => b.checked).length;
+
+  if (els.selectAll) {
+    if (boxes.length === 0) {
+      els.selectAll.checked = false;
+      els.selectAll.indeterminate = false;
+    } else {
+      els.selectAll.checked = checked === boxes.length;
+      els.selectAll.indeterminate = checked > 0 && checked < boxes.length;
+    }
+  }
+}
+
+function wireRowCheckboxesOncePerRender() {
+  document.querySelectorAll('input.row-select[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener("change", updateSelectedUI);
+  });
+}
+
+/* ---------------- Render table ---------------- */
+
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
@@ -195,17 +265,22 @@ function renderTable(rows) {
         const blob = [
           r.patient_first, r.patient_last, r.patient_status,
           r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier, r.created_at
+          r.insurance, r.insurance_carrier, r.carrier, r.created_at,
+          r.confirmation_id, r.id
         ].map((x) => String(x || "").toLowerCase()).join(" ");
         return blob.includes(q);
       });
 
   if (!filtered.length) {
-    els.bookingsBody.innerHTML = `<tr><td colspan="8" class="empty">No matching bookings.</td></tr>`;
+    // 9 cols now: checkbox + 8 fields
+    els.bookingsBody.innerHTML = `<tr><td colspan="9" class="empty">No matching bookings.</td></tr>`;
+    updateSelectedUI();
     return;
   }
 
   els.bookingsBody.innerHTML = filtered.map((r) => {
+    // IMPORTANT: delete uses r.id (D1 rowid exposed by worker)
+    const id = String(r.id ?? "");
     const booked = String(r.created_at || "").slice(0, 10);
     const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
     const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
@@ -217,6 +292,9 @@ function renderTable(rows) {
 
     return `
       <tr>
+        <td class="col-select">
+          <input class="row-select" type="checkbox" data-id="${escapeHtml(id)}" aria-label="Select row" />
+        </td>
         <td>${escapeHtml(booked || "—")}</td>
         <td>${escapeHtml(name)}</td>
         <td>${escapeHtml(dob)}</td>
@@ -228,7 +306,12 @@ function renderTable(rows) {
       </tr>
     `;
   }).join("");
+
+  wireRowCheckboxesOncePerRender();
+  updateSelectedUI();
 }
+
+/* ---------------- Charts ---------------- */
 
 function buildLineSeries(bookings, start, end) {
   const s = start || addDays(todayYYYYMMDD(), -29);
@@ -312,6 +395,8 @@ function renderPieChart(newCount, returningCount) {
   });
 }
 
+/* ---------------- CSV ---------------- */
+
 function csvEscape(v) {
   const s = String(v ?? "");
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -387,6 +472,7 @@ async function loadAll() {
 }
 
 /* ---------- Quick range buttons ---------- */
+
 function applyRange(mode) {
   const t = todayYYYYMMDD();
   if (mode === "today") {
@@ -443,14 +529,40 @@ function showRoute(route) {
   // optional: close sidebar on small screens after navigating
   if (window.innerWidth <= 900) closeSidebar();
 
-  // if returning to dashboard, keep status/live info updated (don’t force reload)
-  // (no-op, but could call loadAll() if you ever want)
+  // no reload here; dashboard stays as-is
 }
 
 function parseHashRoute() {
   const h = (location.hash || "").replace("#/", "").trim();
   if (h === "analytics" || h === "communication" || h === "dashboard") return h;
   return "dashboard";
+}
+
+/* ---------------- Delete Selected (NEW) ---------------- */
+
+async function deleteSelectedRows() {
+  const ids = getSelectedIds();
+  if (!ids.length) return;
+
+  const ok = confirm(`Hard delete ${ids.length} booking(s)? This cannot be undone.`);
+  if (!ok) return;
+
+  try {
+    setStatus("Deleting…", "");
+
+    await apiPost(`/office/bookings/delete`, { ids });
+
+    // Clear selection UI and refresh data
+    if (els.selectAll) {
+      els.selectAll.checked = false;
+      els.selectAll.indeterminate = false;
+    }
+
+    await loadAll();
+    setStatus("Connected", "ok");
+  } catch (e) {
+    setStatus(String(e), "err");
+  }
 }
 
 /* ---------------- One-time wiring ---------------- */
@@ -465,7 +577,8 @@ function wireDashboardOnce() {
 
   // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
-    item.addEventListener("click", () => {
+    item.addEventListener("click", (e) => {
+      e.preventDefault();
       const route = item.dataset.route || "dashboard";
       // update hash -> triggers hashchange too
       location.hash = `#/${route}`;
@@ -484,6 +597,18 @@ function wireDashboardOnce() {
   els.btnRefresh?.addEventListener("click", () => loadAll());
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
+
+  // select all checkbox (NEW)
+  els.selectAll?.addEventListener("change", () => {
+    const checked = !!els.selectAll.checked;
+    document.querySelectorAll('input.row-select[type="checkbox"]').forEach((cb) => {
+      cb.checked = checked;
+    });
+    updateSelectedUI();
+  });
+
+  // delete selected button (NEW)
+  els.btnDeleteSelected?.addEventListener("click", deleteSelectedRows);
 
   // logout both buttons
   const doLogout = () => {
