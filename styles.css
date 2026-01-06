@@ -41,7 +41,6 @@ img { max-width: 100%; height: auto; }
   filter: none;
 }
 
-/* Optional destructive style (used if you add class="btn-danger") */
 .btn-danger {
   background: #b33a2a;
   color: #fff;
@@ -190,7 +189,7 @@ img { max-width: 100%; height: auto; }
    APP SHELL (SIDEBAR + MAIN)
 ========================================================= */
 .app-main {
-  margin-left: 72px; /* collapsed width */
+  margin-left: 72px;
   min-height: 100vh;
 }
 
@@ -227,7 +226,7 @@ img { max-width: 100%; height: auto; }
 }
 .menu-btn:hover { filter: brightness(.98); }
 
-/* Hamburger icon (3 lines) */
+/* Hamburger icon */
 .burger {
   width: 18px;
   height: 12px;
@@ -327,19 +326,13 @@ img { max-width: 100%; height: auto; }
   flex-shrink: 0;
 }
 
-/* Label text */
-.nav-label {
-  white-space: nowrap;
-}
+.nav-label { white-space: nowrap; }
 
-/* Collapsed state = icons only, centered */
 .sidebar:not(.open) .nav-item {
   justify-content: center;
   padding: 12px 0;
 }
-.sidebar:not(.open) .nav-label {
-  display: none;
-}
+.sidebar:not(.open) .nav-label { display: none; }
 
 /* Logout bottom area */
 .sidebar-foot {
@@ -351,9 +344,7 @@ img { max-width: 100%; height: auto; }
   width: 100%;
   display: none;
 }
-.sidebar.open .btn-logout-side {
-  display: block;
-}
+.sidebar.open .btn-logout-side { display: block; }
 
 /* Mobile overlay */
 .sidebar-overlay {
@@ -364,7 +355,7 @@ img { max-width: 100%; height: auto; }
 }
 
 /* =========================================================
-   DASHBOARD LAYOUT (your existing styles)
+   DASHBOARD LAYOUT
 ========================================================= */
 .container {
   max-width: 1200px;
@@ -411,10 +402,28 @@ img { max-width: 100%; height: auto; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field label { font-size: 12px; font-weight: 700; }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid #d7d0c6;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+  outline: none;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: rgba(111,143,122,.65);
+  box-shadow: 0 0 0 3px rgba(111,143,122,.15);
 }
 
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -507,10 +516,7 @@ tbody td {
 }
 
 /* =========================================================
-   HARD DELETE UI (NEW)
-   - checkbox column
-   - selection counter
-   - delete button
+   HARD DELETE UI
 ========================================================= */
 th.col-select,
 td.col-select {
@@ -535,9 +541,57 @@ td.col-select {
   border: 1px solid rgba(111,143,122,.18);
 }
 
-/* Make delete button align nicely with other controls */
-#btnDeleteSelected {
-  white-space: nowrap;
+#btnDeleteSelected { white-space: nowrap; }
+
+/* =========================================================
+   COMMUNICATION PAGE (matches existing portal look)
+========================================================= */
+.comm-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.comm-compose .field {
+  width: 100%;
+}
+
+.comm-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  font-size: 12px;
+  color: #4a5a51;
+  opacity: 0.9;
+}
+
+.card-inner {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e3ddd3;
+  background: rgba(244,239,231,.55);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(0,0,0,.08);
+}
+.kv:last-child { border-bottom: none; }
+
+.kv .k {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(31,42,36,.75);
+}
+.kv .v {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* =========================================================
@@ -545,5 +599,6 @@ td.col-select {
 ========================================================= */
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
+  .comm-grid { grid-template-columns: 1fr; }
   .sidebar.open { width: 260px; }
 }
