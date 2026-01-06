@@ -227,134 +227,133 @@
           </div>
         </section>
 
- <!-- ===== COMMUNICATION SECTION ===== -->
-<section id="route-communication" class="hidden">
-  <div class="container">
-    <header class="header">
-      <div class="brand">
-        <div class="brand-left">
-          <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
-          <div class="brand-stack">
-            <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
-            <div class="welcome">Communication Center</div>
-            <div class="brand-sub">Text patients directly from the portal</div>
+        <!-- ===== COMMUNICATION SECTION ===== -->
+        <section id="route-communication" class="hidden">
+          <div class="container">
+            <header class="header">
+              <div class="brand">
+                <div class="brand-left">
+                  <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
+                  <div class="brand-stack">
+                    <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                    <div class="welcome">Communication Center</div>
+                    <div class="brand-sub">Text patients directly from the portal</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="header-actions">
+                <button id="btnCommRefresh" class="btn btn-secondary" type="button">Refresh</button>
+              </div>
+            </header>
+
+            <section class="grid comm-grid">
+              <!-- Compose -->
+              <div class="card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Send a Text</div>
+                    <div class="card-sub">Choose a patient or enter a phone number.</div>
+                  </div>
+                </div>
+
+                <div class="filters-row comm-compose">
+                  <div class="field">
+                    <label for="commPatientSelect">Patient</label>
+                    <select id="commPatientSelect">
+                      <option value="">Select from recent bookings…</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label for="commTo">To</label>
+                    <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
+                    <div class="hint">US numbers only. Paste 10 digits or +1 format.</div>
+                  </div>
+
+                  <div class="field">
+                    <label for="commBody">Message</label>
+                    <textarea id="commBody" rows="4" placeholder="Type your message…"></textarea>
+                    <div class="hint"><span id="commCharCount">0</span>/320</div>
+                  </div>
+
+                  <div class="comm-actions">
+                    <button id="btnCommSend" class="btn" type="button">Send Text</button>
+                    <div id="commSendStatus" class="status-text"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selected patient details -->
+              <div class="card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Selected Patient</div>
+                    <div class="card-sub">Quick context from the booking log.</div>
+                  </div>
+                </div>
+
+                <div class="comm-patient card-inner">
+                  <div class="kv">
+                    <div class="k">Name</div>
+                    <div id="commSelName" class="v">—</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Phone</div>
+                    <div id="commSelPhone" class="v">—</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Appt</div>
+                    <div id="commSelAppt" class="v">—</div>
+                  </div>
+                  <div class="kv">
+                    <div class="k">Confirmation</div>
+                    <div id="commSelConf" class="v">—</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- Message log -->
+            <section class="card table-card">
+              <div class="table-head">
+                <div>
+                  <div class="card-title">Message Log</div>
+                  <div class="card-sub">Shows queued/sent/delivered/failed for the selected number.</div>
+                </div>
+
+                <div class="table-tools">
+                  <input id="commSearchTo" class="search" type="search" placeholder="Enter phone to load messages (e.g. 2105555555)" />
+                  <button id="btnCommLoad" class="btn btn-secondary" type="button">Load</button>
+                </div>
+              </div>
+
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>To</th>
+                      <th>Message</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="commMessagesBody">
+                    <tr>
+                      <td colspan="4" class="empty">Select a patient or enter a number to view messages.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <footer class="footer">
+              <span>FoxDent • Brook Hollow Family Dentistry</span>
+            </footer>
           </div>
-        </div>
+        </section>
       </div>
-
-      <div class="header-actions">
-        <button id="btnCommRefresh" class="btn btn-secondary" type="button">Refresh</button>
-      </div>
-    </header>
-
-    <!-- Top grid: Compose + Patient picker -->
-    <section class="grid comm-grid">
-      <!-- Compose -->
-      <div class="card">
-        <div class="card-top">
-          <div>
-            <div class="card-title">Send a Text</div>
-            <div class="card-sub">Choose a patient or enter a phone number.</div>
-          </div>
-        </div>
-
-        <div class="filters-row comm-compose">
-          <div class="field">
-            <label for="commPatientSelect">Patient</label>
-            <select id="commPatientSelect">
-              <option value="">Select from recent bookings…</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label for="commTo">To</label>
-            <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
-            <div class="hint">US numbers only. You can paste 10 digits or +1 format.</div>
-          </div>
-
-          <div class="field">
-            <label for="commBody">Message</label>
-            <textarea id="commBody" rows="4" placeholder="Type your message…"></textarea>
-            <div class="hint">
-              <span id="commCharCount">0</span>/320
-            </div>
-          </div>
-
-          <div class="comm-actions">
-            <button id="btnCommSend" class="btn" type="button">Send Text</button>
-            <div id="commSendStatus" class="status-text"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Selected patient details -->
-      <div class="card">
-        <div class="card-top">
-          <div>
-            <div class="card-title">Selected Patient</div>
-            <div class="card-sub">Quick context from the booking log.</div>
-          </div>
-        </div>
-
-        <div class="comm-patient card-inner">
-          <div class="kv">
-            <div class="k">Name</div>
-            <div id="commSelName" class="v">—</div>
-          </div>
-          <div class="kv">
-            <div class="k">Phone</div>
-            <div id="commSelPhone" class="v">—</div>
-          </div>
-          <div class="kv">
-            <div class="k">Appt</div>
-            <div id="commSelAppt" class="v">—</div>
-          </div>
-          <div class="kv">
-            <div class="k">Confirmation</div>
-            <div id="commSelConf" class="v">—</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Message log -->
-    <section class="card table-card">
-      <div class="table-head">
-        <div>
-          <div class="card-title">Message Log</div>
-          <div class="card-sub">Shows queued/sent/delivered/failed for the selected number.</div>
-        </div>
-
-        <div class="table-tools">
-          <input id="commSearchTo" class="search" type="search" placeholder="Enter phone to load messages (e.g. 2105555555)" />
-          <button id="btnCommLoad" class="btn btn-secondary" type="button">Load</button>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>To</th>
-              <th>Message</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="commMessagesBody">
-            <tr>
-              <td colspan="4" class="empty">Select a patient or enter a number to view messages.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <span>FoxDent • Brook Hollow Family Dentistry</span>
-    </footer>
-  </div>
-</section>
+    </div>
 
     <script src="app.js"></script>
   </body>
