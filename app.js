@@ -1,4 +1,4 @@
-const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev"; // Worker B URL
+const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev";
 
 let AUTH_HEADER = null;
 let lineChart = null;
@@ -24,6 +24,10 @@ const els = {
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
+  // NEW delete UI
+  btnDeleteSelected: document.getElementById("btnDeleteSelected"),
+  selectedCount: document.getElementById("selectedCount"),
+
   // dashboard fields
   statusText: document.getElementById("statusText"),
   startDate: document.getElementById("startDate"),
@@ -43,15 +47,12 @@ const els = {
   routeDashboard: document.getElementById("route-dashboard"),
   routeAnalytics: document.getElementById("route-analytics"),
   routeCommunication: document.getElementById("route-communication"),
-
-  // delete controls (NEW)
-  selectAll: document.getElementById("selectAll"),
-  btnDeleteSelected: document.getElementById("btnDeleteSelected"),
-  selectedCount: document.getElementById("selectedCount"),
 };
 
 let cachedRows = [];
 let uiWired = false;
+
+const selectedIds = new Set();
 
 /* ---------------- View helpers ---------------- */
 
@@ -67,7 +68,6 @@ function showLogin() {
 }
 
 function showDashboard() {
-  // IMPORTANT: hard-hide login so it can’t push layout
   els.loginView.classList.add("hidden");
   els.dashboardView.classList.remove("hidden");
 }
@@ -133,40 +133,22 @@ function clearAuth() {
 
 /* ---------------- API ---------------- */
 
-async function api(path) {
+async function api(path, init = {}) {
   if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
 
-  const res = await fetch(`${OFFICE_API_BASE}${path}`, {
-    method: "GET",
-    headers: {
-      Authorization: AUTH_HEADER,
-      Accept: "application/json",
-    },
-  });
+  const headers = new Headers(init.headers || {});
+  headers.set("Authorization", AUTH_HEADER);
+  headers.set("Accept", "application/json");
 
-  if (res.status === 401) {
-    clearAuth();
-    throw new Error("Unauthorized (wrong credentials).");
+  // If we send a body, ensure JSON content-type
+  if (init.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
-  const data = await res.json().catch(() => null);
-  if (!data || !data.ok) {
-    throw new Error((data && data.error) ? data.error : `API error (${res.status})`);
-  }
-  return data;
-}
-
-async function apiPost(path, bodyObj) {
-  if (!AUTH_HEADER) throw new Error("Not authenticated. Please login.");
-
   const res = await fetch(`${OFFICE_API_BASE}${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: AUTH_HEADER,
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(bodyObj || {}),
+    method: init.method || "GET",
+    headers,
+    body: init.body,
   });
 
   if (res.status === 401) {
@@ -215,48 +197,32 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
-/* ---------------- Selection helpers (NEW) ---------------- */
+function updateSelectionUI() {
+  const n = selectedIds.size;
 
-function getSelectedIds() {
-  const out = [];
-  document.querySelectorAll('input.row-select[type="checkbox"]:checked').forEach((cb) => {
-    const id = cb.getAttribute("data-id");
-    if (id) out.push(id);
-  });
-  return out;
-}
+  if (els.selectedCount) {
+    els.selectedCount.textContent = `${n} selected`;
+    els.selectedCount.classList.toggle("hidden", n === 0);
+  }
 
-function updateSelectedUI() {
-  const ids = getSelectedIds();
-  const n = ids.length;
-
-  if (els.selectedCount) els.selectedCount.textContent = `${n} selected`;
-  if (els.btnDeleteSelected) els.btnDeleteSelected.disabled = n === 0;
-
-  const boxes = Array.from(document.querySelectorAll('input.row-select[type="checkbox"]'));
-  const checked = boxes.filter((b) => b.checked).length;
-
-  if (els.selectAll) {
-    if (boxes.length === 0) {
-      els.selectAll.checked = false;
-      els.selectAll.indeterminate = false;
-    } else {
-      els.selectAll.checked = checked === boxes.length;
-      els.selectAll.indeterminate = checked > 0 && checked < boxes.length;
-    }
+  if (els.btnDeleteSelected) {
+    els.btnDeleteSelected.disabled = n === 0;
   }
 }
 
-function wireRowCheckboxesOncePerRender() {
-  document.querySelectorAll('input.row-select[type="checkbox"]').forEach((cb) => {
-    cb.addEventListener("change", updateSelectedUI);
-  });
+function clearSelection() {
+  selectedIds.clear();
+  updateSelectionUI();
 }
-
-/* ---------------- Render table ---------------- */
 
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
+
+  // If current selection contains ids no longer present, drop them
+  const idsInTable = new Set(cachedRows.map((r) => String(r.confirmation_id || "").trim()).filter(Boolean));
+  for (const id of Array.from(selectedIds)) {
+    if (!idsInTable.has(id)) selectedIds.delete(id);
+  }
 
   const q = (els.searchInput.value || "").trim().toLowerCase();
   const filtered = !q
@@ -266,21 +232,18 @@ function renderTable(rows) {
           r.patient_first, r.patient_last, r.patient_status,
           r.appointment_date, r.appointment_time, r.appointment_type,
           r.insurance, r.insurance_carrier, r.carrier, r.created_at,
-          r.confirmation_id, r.id
+          r.confirmation_id
         ].map((x) => String(x || "").toLowerCase()).join(" ");
         return blob.includes(q);
       });
 
   if (!filtered.length) {
-    // 9 cols now: checkbox + 8 fields
     els.bookingsBody.innerHTML = `<tr><td colspan="9" class="empty">No matching bookings.</td></tr>`;
-    updateSelectedUI();
+    updateSelectionUI();
     return;
   }
 
   els.bookingsBody.innerHTML = filtered.map((r) => {
-    // IMPORTANT: delete uses r.id (D1 rowid exposed by worker)
-    const id = String(r.id ?? "");
     const booked = String(r.created_at || "").slice(0, 10);
     const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim();
     const dob = String(r.patient_dob || r.dob || "").slice(0, 10) || "—";
@@ -290,10 +253,17 @@ function renderTable(rows) {
     const type = apptTypeLabel(r.appointment_type);
     const ins = insuranceLabel(r);
 
+    const cid = String(r.confirmation_id || "").trim();
+    const canDelete = !!cid;
+    const checked = canDelete && selectedIds.has(cid) ? "checked" : "";
+
     return `
-      <tr>
+      <tr data-confirmation-id="${escapeHtml(cid)}">
         <td class="col-select">
-          <input class="row-select" type="checkbox" data-id="${escapeHtml(id)}" aria-label="Select row" />
+          ${canDelete
+            ? `<input class="row-select" type="checkbox" ${checked} aria-label="Select row to delete" />`
+            : `<span title="Missing confirmation_id">—</span>`
+          }
         </td>
         <td>${escapeHtml(booked || "—")}</td>
         <td>${escapeHtml(name)}</td>
@@ -307,11 +277,21 @@ function renderTable(rows) {
     `;
   }).join("");
 
-  wireRowCheckboxesOncePerRender();
-  updateSelectedUI();
-}
+  // Checkbox wiring (event delegation)
+  els.bookingsBody.querySelectorAll("tr").forEach((tr) => {
+    const cid = String(tr.getAttribute("data-confirmation-id") || "").trim();
+    const cb = tr.querySelector(".row-select");
+    if (!cb || !cid) return;
 
-/* ---------------- Charts ---------------- */
+    cb.addEventListener("change", () => {
+      if (cb.checked) selectedIds.add(cid);
+      else selectedIds.delete(cid);
+      updateSelectionUI();
+    });
+  });
+
+  updateSelectionUI();
+}
 
 function buildLineSeries(bookings, start, end) {
   const s = start || addDays(todayYYYYMMDD(), -29);
@@ -395,8 +375,6 @@ function renderPieChart(newCount, returningCount) {
   });
 }
 
-/* ---------------- CSV ---------------- */
-
 function csvEscape(v) {
   const s = String(v ?? "");
   if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -409,7 +387,8 @@ function exportCsv() {
     const blob = [
       r.patient_first, r.patient_last, r.patient_status,
       r.appointment_date, r.appointment_time, r.appointment_type,
-      r.insurance, r.insurance_carrier, r.carrier, r.created_at
+      r.insurance, r.insurance_carrier, r.carrier, r.created_at,
+      r.confirmation_id
     ].map((x) => String(x || "").toLowerCase()).join(" ");
     return blob.includes(q);
   });
@@ -472,7 +451,6 @@ async function loadAll() {
 }
 
 /* ---------- Quick range buttons ---------- */
-
 function applyRange(mode) {
   const t = todayYYYYMMDD();
   if (mode === "today") {
@@ -489,6 +467,34 @@ function applyRange(mode) {
     }
   }
   loadAll();
+}
+
+/* ---------------- Delete selected ---------------- */
+
+async function deleteSelected() {
+  const ids = Array.from(selectedIds);
+  if (!ids.length) return;
+
+  const ok = confirm(`Hard delete ${ids.length} booking(s) from the log?\n\nThis cannot be undone.`);
+  if (!ok) return;
+
+  try {
+    els.btnDeleteSelected.disabled = true;
+    els.btnDeleteSelected.textContent = "Deleting…";
+
+    await api("/office/bookings/delete", {
+      method: "POST",
+      body: JSON.stringify({ confirmationIds: ids }),
+    });
+
+    clearSelection();
+    await loadAll();
+  } catch (e) {
+    alert(`Delete failed: ${String(e)}`);
+  } finally {
+    els.btnDeleteSelected.textContent = "Delete Selected";
+    updateSelectionUI();
+  }
 }
 
 /* ---------------- Sidebar helpers ---------------- */
@@ -519,50 +525,19 @@ function setActiveNav(route) {
 function showRoute(route) {
   const r = route || "dashboard";
 
-  // show/hide sections
   if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
   if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", r !== "analytics");
   if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
 
   setActiveNav(r);
 
-  // optional: close sidebar on small screens after navigating
   if (window.innerWidth <= 900) closeSidebar();
-
-  // no reload here; dashboard stays as-is
 }
 
 function parseHashRoute() {
   const h = (location.hash || "").replace("#/", "").trim();
   if (h === "analytics" || h === "communication" || h === "dashboard") return h;
   return "dashboard";
-}
-
-/* ---------------- Delete Selected (NEW) ---------------- */
-
-async function deleteSelectedRows() {
-  const ids = getSelectedIds();
-  if (!ids.length) return;
-
-  const ok = confirm(`Hard delete ${ids.length} booking(s)? This cannot be undone.`);
-  if (!ok) return;
-
-  try {
-    setStatus("Deleting…", "");
-
-    await apiPost(`/office/bookings/delete`, { ids });
-
-    // Clear selection UI and refresh data
-    if (els.selectAll) {
-      els.selectAll.checked = false;
-      els.selectAll.indeterminate = false;
-    }
-
-    await loadAll();
-    setStatus("Connected", "ok");
-  } catch (e) {
-    setStatus(String(e), "err");
-  }
 }
 
 /* ---------------- One-time wiring ---------------- */
@@ -577,40 +552,25 @@ function wireDashboardOnce() {
 
   // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
-    item.addEventListener("click", (e) => {
-      e.preventDefault();
+    item.addEventListener("click", () => {
       const route = item.dataset.route || "dashboard";
-      // update hash -> triggers hashchange too
       location.hash = `#/${route}`;
     });
   });
 
-  // hash routing
   window.addEventListener("hashchange", () => showRoute(parseHashRoute()));
 
-  // pills
   document.querySelectorAll(".pill").forEach((b) => {
     b.addEventListener("click", () => applyRange(b.dataset.range));
   });
 
-  // dashboard buttons
   els.btnRefresh?.addEventListener("click", () => loadAll());
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
 
-  // select all checkbox (NEW)
-  els.selectAll?.addEventListener("change", () => {
-    const checked = !!els.selectAll.checked;
-    document.querySelectorAll('input.row-select[type="checkbox"]').forEach((cb) => {
-      cb.checked = checked;
-    });
-    updateSelectedUI();
-  });
+  // delete
+  els.btnDeleteSelected?.addEventListener("click", deleteSelected);
 
-  // delete selected button (NEW)
-  els.btnDeleteSelected?.addEventListener("click", deleteSelectedRows);
-
-  // logout both buttons
   const doLogout = () => {
     clearAuth();
     closeSidebar();
@@ -644,23 +604,18 @@ els.loginForm.addEventListener("submit", async (e) => {
     const candidate = makeBasicAuth(user, pass);
     AUTH_HEADER = candidate;
 
-    // validate credentials
     await api(`/office/bookings?limit=1`);
-
     rememberAuthIfWanted(candidate, remember);
 
     showDashboard();
 
-    // default range
     const t = todayYYYYMMDD();
     els.endDate.value = t;
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
 
-    // route to whatever hash is set, default dashboard
-    const routeNow = parseHashRoute();
-    showRoute(routeNow);
+    showRoute(parseHashRoute());
 
     await loadAll();
   } catch (err) {
