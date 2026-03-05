@@ -7,7 +7,7 @@
 
     <!-- FoxDent Tab Icon -->
     <link rel="icon" type="image/png" href="/favicon.png">
-    
+
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
@@ -80,9 +80,10 @@
             <span class="nav-label">Dashboard</span>
           </a>
 
-          <a class="nav-item" href="#/analytics" data-route="analytics">
+          <!-- ✅ CHANGED: Analytics -> WebForms -->
+          <a class="nav-item" href="#/webforms" data-route="webforms">
             <img src="foxdentanalytic.png" class="nav-icon" alt="" aria-hidden="true" />
-            <span class="nav-label">Analytics</span>
+            <span class="nav-label">WebForms</span>
           </a>
 
           <a class="nav-item" href="#/communication" data-route="communication">
@@ -221,13 +222,95 @@
           </div>
         </section>
 
-        <!-- ===== TEMP ANALYTICS SECTION ===== -->
-        <section id="route-analytics" class="hidden">
+        <!-- ===== ✅ NEW WEBFORMS SECTION ===== -->
+        <section id="route-webforms" class="hidden">
           <div class="container">
-            <div class="card">
-              <div class="card-title">Analytics</div>
-              <div class="card-sub">Temporary page (next step: build full analytics).</div>
-            </div>
+            <header class="header">
+              <div class="brand">
+                <div class="brand-left">
+                  <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
+                  <div class="brand-stack">
+                    <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                    <div class="welcome">WebForms</div>
+                    <div class="brand-sub">Send forms to patients before their appointment</div>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <section class="grid webforms-grid">
+              <!-- LEFT: compose -->
+              <div class="card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Enter A Phone Number</div>
+                    <div class="card-sub">Text a form link to any patient number.</div>
+                  </div>
+                </div>
+
+                <div class="filters-row webforms-compose">
+                  <div class="field">
+                    <label for="wfTo">To</label>
+                    <input id="wfTo" type="tel" placeholder="+1 (210) 555-5555" />
+                    <div class="hint">US numbers only. Paste 10 digits or +1 format.</div>
+                  </div>
+
+                  <div class="field">
+                    <label for="wfBody">Message Preview</label>
+                    <textarea id="wfBody" rows="5" placeholder="Select a WebForm on the right to auto-fill this message…"></textarea>
+                    <div class="hint"><span id="wfCharCount">0</span>/320</div>
+                  </div>
+
+                  <div class="comm-actions">
+                    <button id="btnWfSend" class="btn" type="button" disabled>Send Form</button>
+                    <div id="wfSendStatus" class="status-text"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT: choose form -->
+              <div class="card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Select WebForm To Send</div>
+                    <div class="card-sub">Click a form to auto-fill the message.</div>
+                  </div>
+                </div>
+
+                <div class="card-inner wf-forms-list">
+                  <!-- ✅ Replace links below with your real OpenDental WebForm public links -->
+                  <button
+                    class="wf-form-btn"
+                    type="button"
+                    data-form-key="new"
+                    data-form-name="New Patient Form"
+                    data-form-link="FORM_LINK_NEW"
+                  >
+                    <div class="wf-form-name">New Patient Form</div>
+                    <div class="wf-form-sub">Intake paperwork for first-time patients</div>
+                  </button>
+
+                  <button
+                    class="wf-form-btn"
+                    type="button"
+                    data-form-key="update"
+                    data-form-name="Updated Patient Form"
+                    data-form-link="FORM_LINK_UPDATE"
+                  >
+                    <div class="wf-form-name">Updated Patient Form</div>
+                    <div class="wf-form-sub">Update medical/contact information</div>
+                  </button>
+                </div>
+
+                <div class="hint" style="margin-top:10px;">
+                  Tip: staff can still edit the message after it auto-fills.
+                </div>
+              </div>
+            </section>
+
+            <footer class="footer">
+              <span>FoxDent • Brook Hollow Family Dentistry</span>
+            </footer>
           </div>
         </section>
 
