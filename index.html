@@ -80,7 +80,7 @@
             <span class="nav-label">Dashboard</span>
           </a>
 
-          <!-- ✅ CHANGED: Analytics -> WebForms -->
+          <!-- ✅ Analytics replaced with WebForms -->
           <a class="nav-item" href="#/webforms" data-route="webforms">
             <img src="foxdentanalytic.png" class="nav-icon" alt="" aria-hidden="true" />
             <span class="nav-label">WebForms</span>
@@ -222,7 +222,7 @@
           </div>
         </section>
 
-        <!-- ===== ✅ WEBFORMS SECTION (replaces Analytics) ===== -->
+        <!-- ===== ✅ WEBFORMS SECTION ===== -->
         <section id="route-webforms" class="hidden">
           <div class="container">
             <header class="header">
@@ -248,7 +248,8 @@
                   </div>
                 </div>
 
-                <div class="filters-row webforms-compose">
+                <!-- ✅ UPDATED: no filters-row here, vertical layout -->
+                <div class="webforms-compose">
                   <div class="field">
                     <label for="wfTo">To</label>
                     <input id="wfTo" type="tel" placeholder="+1 (210) 555-5555" />
@@ -257,11 +258,11 @@
 
                   <div class="field">
                     <label for="wfBody">Message Preview</label>
-                    <textarea id="wfBody" rows="5" placeholder="Select a WebForm on the right to auto-fill this message…"></textarea>
+                    <textarea id="wfBody" rows="7" placeholder="Select a WebForm on the right to auto-fill this message…"></textarea>
                     <div class="hint"><span id="wfCharCount">0</span>/320</div>
                   </div>
 
-                  <div class="comm-actions">
+                  <div class="wf-actions">
                     <button id="btnWfSend" class="btn" type="button" disabled>Send Form</button>
                     <div id="wfSendStatus" class="status-text"></div>
                   </div>
@@ -311,7 +312,7 @@
           </div>
         </section>
 
-        <!-- ===== COMMUNICATION SECTION ===== -->
+        <!-- ===== COMMUNICATION SECTION (UNCHANGED) ===== -->
         <section id="route-communication" class="hidden">
           <div class="container">
             <header class="header">
