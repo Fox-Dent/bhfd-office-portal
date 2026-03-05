@@ -24,7 +24,7 @@ const els = {
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
-  // NEW delete UI
+  // delete UI
   btnDeleteSelected: document.getElementById("btnDeleteSelected"),
   selectedCount: document.getElementById("selectedCount"),
 
@@ -45,10 +45,11 @@ const els = {
 
   // route sections
   routeDashboard: document.getElementById("route-dashboard"),
-  routeWebForms: document.getElementById("route-webforms"),
+  routeAnalytics: document.getElementById("route-analytics"), // kept for safety if still in HTML
+  routeWebforms: document.getElementById("route-webforms"),
   routeCommunication: document.getElementById("route-communication"),
 
-  // communication UI
+  // communication UI (UNCHANGED)
   btnCommRefresh: document.getElementById("btnCommRefresh"),
   commPatientSelect: document.getElementById("commPatientSelect"),
   commTo: document.getElementById("commTo"),
@@ -103,6 +104,7 @@ function setLoginError(msg) {
 }
 
 function setStatus(text, mode = "") {
+  if (!els.statusText) return;
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
@@ -260,6 +262,7 @@ function clearSelection() {
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
+  // Drop selections no longer present
   const idsInTable = new Set(
     cachedRows.map((r) => String(r.confirmation_id || "").trim()).filter(Boolean)
   );
@@ -267,7 +270,7 @@ function renderTable(rows) {
     if (!idsInTable.has(id)) selectedIds.delete(id);
   }
 
-  const q = (els.searchInput.value || "").trim().toLowerCase();
+  const q = (els.searchInput?.value || "").trim().toLowerCase();
   const filtered = !q
     ? cachedRows
     : cachedRows.filter((r) => {
@@ -279,6 +282,8 @@ function renderTable(rows) {
         ].map((x) => String(x || "").toLowerCase()).join(" ");
         return blob.includes(q);
       });
+
+  if (!els.bookingsBody) return;
 
   if (!filtered.length) {
     els.bookingsBody.innerHTML = `<tr><td colspan="9" class="empty">No matching bookings.</td></tr>`;
@@ -321,6 +326,7 @@ function renderTable(rows) {
     `;
   }).join("");
 
+  // Checkbox wiring
   els.bookingsBody.querySelectorAll("tr").forEach((tr) => {
     const cid = String(tr.getAttribute("data-confirmation-id") || "").trim();
     const cb = tr.querySelector(".row-select");
@@ -365,9 +371,10 @@ function buildLineSeries(bookings, start, end) {
 
 function renderLineChart(labels, counts) {
   const ctx = document.getElementById("lineChart");
+  if (!ctx) return;
 
   const total = counts.reduce((a, b) => a + b, 0);
-  els.scheduledMeta.textContent = `${total} total booked in selected range`;
+  if (els.scheduledMeta) els.scheduledMeta.textContent = `${total} total booked in selected range`;
 
   if (lineChart) lineChart.destroy();
 
@@ -400,9 +407,11 @@ function renderLineChart(labels, counts) {
 
 function renderPieChart(newCount, returningCount) {
   const ctx = document.getElementById("pieChart");
+  if (!ctx) return;
+
   const totalNew = Number(newCount || 0);
   const totalRet = Number(returningCount || 0);
-  els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
+  if (els.newMeta) els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
 
   if (pieChart) pieChart.destroy();
 
@@ -430,7 +439,7 @@ function csvEscape(v) {
 }
 
 function exportCsv() {
-  const q = (els.searchInput.value || "").trim().toLowerCase();
+  const q = (els.searchInput?.value || "").trim().toLowerCase();
   const rows = !q ? cachedRows : cachedRows.filter((r) => {
     const blob = [
       r.patient_first, r.patient_last, r.patient_status,
@@ -474,8 +483,8 @@ function exportCsv() {
 async function loadAll() {
   setStatus("Loading…", "");
   try {
-    const start = (els.startDate.value || "").trim();
-    const end = (els.endDate.value || "").trim();
+    const start = (els.startDate?.value || "").trim();
+    const end = (els.endDate?.value || "").trim();
     const qs = (start && end) ? `?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}` : "";
 
     const [bookings, analytics] = await Promise.all([
@@ -503,16 +512,16 @@ async function loadAll() {
 function applyRange(mode) {
   const t = todayYYYYMMDD();
   if (mode === "today") {
-    els.startDate.value = t;
-    els.endDate.value = t;
+    if (els.startDate) els.startDate.value = t;
+    if (els.endDate) els.endDate.value = t;
   } else if (mode === "mtd") {
-    els.startDate.value = monthStart(t);
-    els.endDate.value = t;
+    if (els.startDate) els.startDate.value = monthStart(t);
+    if (els.endDate) els.endDate.value = t;
   } else {
     const days = Number(mode);
     if (Number.isFinite(days)) {
-      els.endDate.value = t;
-      els.startDate.value = addDays(t, -(days - 1));
+      if (els.endDate) els.endDate.value = t;
+      if (els.startDate) els.startDate.value = addDays(t, -(days - 1));
     }
   }
   loadAll();
@@ -548,6 +557,7 @@ async function deleteSelected() {
 
 /* ================================
    COMMUNICATION (Portal texting)
+   (UNCHANGED)
 ================================== */
 
 function digitsOnly(s) {
@@ -756,68 +766,73 @@ async function commSendMessage() {
 }
 
 /* ================================
-   WEBFORMS (NEW)
+   WEBFORMS (NEW TAB)
 ================================== */
+
+const WEBFORMS = [
+  {
+    key: "new",
+    name: "New Patient Forms",
+    link: "https://patientviewer.com/WebFormsGWT/GWT/WebForms/WebForms.html?DOID=31638&RKID=9571&WSDID=166700",
+    template: (link) =>
+      `Hi! Please complete your New Patient Forms before your visit with Brook Hollow Family Dentistry.\n\n${link}`,
+  },
+  {
+    key: "updated",
+    name: "Updated Patient Forms",
+    link: "https://patientviewer.com/WebFormsGWT/GWT/WebForms/WebForms.html?DOID=31638&RKID=9571&WSDID=189407",
+    template: (link) =>
+      `Hi! Please complete your Updated Patient Forms before your visit with Brook Hollow Family Dentistry.\n\n${link}`,
+  },
+];
 
 function wfUpdateCharCount() {
   if (!els.wfBody || !els.wfCharCount) return;
-  const n = String(els.wfBody.value || "").length;
-  els.wfCharCount.textContent = String(n);
+  els.wfCharCount.textContent = String((els.wfBody.value || "").length);
 }
 
-function wfCanSend() {
-  const to = toE164US(els.wfTo?.value || "");
-  const body = String(els.wfBody?.value || "").trim();
-  return !!to && !!body;
+function wfSetActiveButton(btn) {
+  document.querySelectorAll(".wf-form-btn").forEach((b) => b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
 }
 
-function wfUpdateSendButtonState() {
-  if (!els.btnWfSend) return;
-  els.btnWfSend.disabled = !wfCanSend();
+function wfAutoFillFromButton(btn) {
+  if (!btn || !els.wfBody) return;
+
+  const name = btn.getAttribute("data-form-name") || "";
+  const link = btn.getAttribute("data-form-link") || "";
+
+  const preset = WEBFORMS.find((x) => x.name === name && x.link === link);
+  const msg = preset ? preset.template(preset.link) : `Hi! Please complete your forms:\n\n${link}`;
+
+  els.wfBody.value = msg;
+  wfUpdateCharCount();
+
+  if (els.btnWfSend) els.btnWfSend.disabled = !String(els.wfTo?.value || "").trim();
+  setWfStatus("", "");
 }
 
-function wfBuildTemplate(formName, formLink) {
-  return `Hi! Please complete your ${formName} before your visit with Brook Hollow Family Dentistry.
-
-${formLink}`;
-}
-
-function wfWireFormButtonsOnce() {
-  const btns = Array.from(document.querySelectorAll(".wf-form-btn"));
-  if (!btns.length) return;
-
+function wfWireButtons() {
+  const btns = document.querySelectorAll(".wf-form-btn");
   btns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      btns.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      const formName = btn.dataset.formName || "forms";
-      const formLink = btn.dataset.formLink || "";
-
-      if (els.wfBody) {
-        els.wfBody.value = wfBuildTemplate(formName, formLink);
-        wfUpdateCharCount();
-      }
-
-      setWfStatus("", "");
-      wfUpdateSendButtonState();
-      els.wfBody?.focus();
+      wfSetActiveButton(btn);
+      wfAutoFillFromButton(btn);
     });
   });
 }
 
-async function wfSendForm() {
-  const to = toE164US(els.wfTo?.value || "");
+async function wfSendFormText() {
+  const toRaw = (els.wfTo?.value || "").trim();
   const body = String(els.wfBody?.value || "").trim();
 
+  const to = toE164US(toRaw);
   if (!to) {
     setWfStatus("Please enter a valid US phone number.", "err");
-    wfUpdateSendButtonState();
     return;
   }
   if (!body) {
     setWfStatus("Message cannot be empty.", "err");
-    wfUpdateSendButtonState();
     return;
   }
 
@@ -825,18 +840,22 @@ async function wfSendForm() {
   if (els.btnWfSend) els.btnWfSend.disabled = true;
 
   try {
+    const payload = {
+      to,
+      body,
+      context: { source: "webforms" },
+    };
+
     await api("/office/messages/send", {
       method: "POST",
-      body: JSON.stringify({ to, body, context: { source: "webforms" } }),
+      body: JSON.stringify(payload),
     });
 
     setWfStatus("Sent", "ok");
-    wfUpdateSendButtonState();
   } catch (e) {
     setWfStatus(String(e), "err");
-    wfUpdateSendButtonState();
   } finally {
-    wfUpdateSendButtonState();
+    if (els.btnWfSend) els.btnWfSend.disabled = false;
   }
 }
 
@@ -869,11 +888,13 @@ function showRoute(route) {
   const r = route || "dashboard";
 
   if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
-  if (els.routeWebForms) els.routeWebForms.classList.toggle("hidden", r !== "webforms");
+  if (els.routeWebforms) els.routeWebforms.classList.toggle("hidden", r !== "webforms");
   if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
+  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", true); // ensure old analytics stays hidden if present
 
   setActiveNav(r);
 
+  // route-specific init
   if (r === "communication") {
     refreshCommPatientSelect();
     updateCharCount();
@@ -881,10 +902,10 @@ function showRoute(route) {
   }
 
   if (r === "webforms") {
-    wfWireFormButtonsOnce();
+    wfWireButtons();
     wfUpdateCharCount();
-    wfUpdateSendButtonState();
     setWfStatus("", "");
+    if (els.btnWfSend) els.btnWfSend.disabled = !String(els.wfTo?.value || "").trim();
   }
 
   if (window.innerWidth <= 900) closeSidebar();
@@ -902,9 +923,11 @@ function wireDashboardOnce() {
   if (uiWired) return;
   uiWired = true;
 
+  // sidebar controls
   els.btnMenu?.addEventListener("click", toggleSidebar);
   els.sidebarOverlay?.addEventListener("click", closeSidebar);
 
+  // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => {
       const route = item.dataset.route || "dashboard";
@@ -922,8 +945,10 @@ function wireDashboardOnce() {
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
 
+  // delete
   els.btnDeleteSelected?.addEventListener("click", deleteSelected);
 
+  // communication wiring
   els.btnCommRefresh?.addEventListener("click", () => {
     loadAll().then(() => {
       refreshCommPatientSelect();
@@ -954,22 +979,13 @@ function wireDashboardOnce() {
     if (e.key === "Enter") commLoadMessagesForInput();
   });
 
-  // WebForms wiring
+  // webforms wiring
   els.wfTo?.addEventListener("input", () => {
-    setWfStatus("", "");
-    wfUpdateSendButtonState();
+    if (els.btnWfSend) els.btnWfSend.disabled = !String(els.wfTo.value || "").trim();
   });
 
-  els.wfBody?.addEventListener("input", () => {
-    setWfStatus("", "");
-    wfUpdateCharCount();
-    wfUpdateSendButtonState();
-  });
-
-  els.btnWfSend?.addEventListener("click", wfSendForm);
-
-  // Wire buttons now too (safe)
-  wfWireFormButtonsOnce();
+  els.wfBody?.addEventListener("input", wfUpdateCharCount);
+  els.btnWfSend?.addEventListener("click", wfSendFormText);
 
   const doLogout = () => {
     clearAuth();
@@ -984,7 +1000,7 @@ function wireDashboardOnce() {
 
 /* ---------------- Login submit ---------------- */
 
-els.loginForm.addEventListener("submit", async (e) => {
+els.loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const user = (els.loginUser.value || "").trim();
@@ -1010,11 +1026,12 @@ els.loginForm.addEventListener("submit", async (e) => {
     showDashboard();
 
     const t = todayYYYYMMDD();
-    els.endDate.value = t;
-    els.startDate.value = addDays(t, -29);
+    if (els.endDate) els.endDate.value = t;
+    if (els.startDate) els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
     showRoute(parseHashRoute());
+
     await loadAll();
   } catch (err) {
     clearAuth();
@@ -1036,8 +1053,8 @@ els.loginForm.addEventListener("submit", async (e) => {
     showDashboard();
 
     const t = todayYYYYMMDD();
-    els.endDate.value = t;
-    els.startDate.value = addDays(t, -29);
+    if (els.endDate) els.endDate.value = t;
+    if (els.startDate) els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
     showRoute(parseHashRoute());
