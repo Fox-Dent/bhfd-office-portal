@@ -45,7 +45,7 @@ const els = {
 
   // route sections
   routeDashboard: document.getElementById("route-dashboard"),
-  routeAnalytics: document.getElementById("route-analytics"),
+  routeWebForms: document.getElementById("route-webforms"),
   routeCommunication: document.getElementById("route-communication"),
 
   // communication UI
@@ -65,6 +65,13 @@ const els = {
   commSearchTo: document.getElementById("commSearchTo"),
   btnCommLoad: document.getElementById("btnCommLoad"),
   commMessagesBody: document.getElementById("commMessagesBody"),
+
+  // webforms UI
+  wfTo: document.getElementById("wfTo"),
+  wfBody: document.getElementById("wfBody"),
+  wfCharCount: document.getElementById("wfCharCount"),
+  btnWfSend: document.getElementById("btnWfSend"),
+  wfSendStatus: document.getElementById("wfSendStatus"),
 };
 
 let cachedRows = [];
@@ -106,6 +113,13 @@ function setCommStatus(text, mode = "") {
   els.commSendStatus.textContent = text || "";
   els.commSendStatus.classList.remove("ok", "err");
   if (mode) els.commSendStatus.classList.add(mode);
+}
+
+function setWfStatus(text, mode = "") {
+  if (!els.wfSendStatus) return;
+  els.wfSendStatus.textContent = text || "";
+  els.wfSendStatus.classList.remove("ok", "err");
+  if (mode) els.wfSendStatus.classList.add(mode);
 }
 
 /* ---------------- Date helpers ---------------- */
@@ -246,7 +260,6 @@ function clearSelection() {
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
-  // Drop selections no longer present
   const idsInTable = new Set(
     cachedRows.map((r) => String(r.confirmation_id || "").trim()).filter(Boolean)
   );
@@ -270,7 +283,6 @@ function renderTable(rows) {
   if (!filtered.length) {
     els.bookingsBody.innerHTML = `<tr><td colspan="9" class="empty">No matching bookings.</td></tr>`;
     updateSelectionUI();
-    // also refresh comm patients list if you're on comm route
     refreshCommPatientSelect();
     return;
   }
@@ -309,7 +321,6 @@ function renderTable(rows) {
     `;
   }).join("");
 
-  // Checkbox wiring
   els.bookingsBody.querySelectorAll("tr").forEach((tr) => {
     const cid = String(tr.getAttribute("data-confirmation-id") || "").trim();
     const cb = tr.querySelector(".row-select");
@@ -482,8 +493,6 @@ async function loadAll() {
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
-
-    // if you're on comm page, make sure its dropdown reflects latest cached rows
     refreshCommPatientSelect();
   } catch (e) {
     setStatus(String(e), "err");
@@ -541,10 +550,6 @@ async function deleteSelected() {
    COMMUNICATION (Portal texting)
 ================================== */
 
-// NOTE: Your bookings table currently does NOT include phone.
-// If you later add `patient_phone` to the D1 table + endpoint, this UI will auto-fill it.
-// Otherwise staff can type/paste a number manually.
-
 function digitsOnly(s) {
   return String(s || "").replace(/\D/g, "");
 }
@@ -556,7 +561,6 @@ function toE164US(input) {
 
   if (raw.startsWith("+")) {
     const d = "+" + digitsOnly(raw);
-    // +1 + 10 digits => length 12 including +
     if (/^\+1\d{10}$/.test(d)) return d;
     return null;
   }
@@ -568,7 +572,6 @@ function toE164US(input) {
 }
 
 function commRowPhone(r) {
-  // support future columns without breaking today
   return (
     r.patient_phone ||
     r.phone ||
@@ -590,13 +593,11 @@ function commRowLabel(r) {
 function refreshCommPatientSelect() {
   if (!els.commPatientSelect) return;
 
-  // keep existing selection if possible
   const prior = String(els.commPatientSelect.value || "").trim();
 
   const rows = Array.isArray(cachedRows) ? cachedRows : [];
   const options = [];
 
-  // Deduplicate by confirmation_id (best unique for a booking row)
   const seen = new Set();
   for (const r of rows) {
     const cid = String(r.confirmation_id || "").trim();
@@ -616,7 +617,6 @@ function refreshCommPatientSelect() {
     els.commPatientSelect.value = prior;
   }
 
-  // If an option is selected, ensure patient panel stays in sync
   if (els.commPatientSelect.value) {
     applySelectedPatientToCommUI(els.commPatientSelect.value);
   }
@@ -644,11 +644,9 @@ function applySelectedPatientToCommUI(confirmationId) {
   if (els.commSelAppt) els.commSelAppt.textContent = appt;
   if (els.commSelConf) els.commSelConf.textContent = conf;
 
-  // Try to auto-fill To if we have a phone
   if (els.commTo) {
     const e164 = toE164US(phone);
     if (e164) els.commTo.value = e164;
-    // also prime message log search box
     if (els.commSearchTo && e164) els.commSearchTo.value = e164;
   }
 }
@@ -731,12 +729,9 @@ async function commSendMessage() {
     const payload = {
       to,
       body,
-      // optional context for your backend logging
       context: selectedCid ? { confirmationId: selectedCid } : undefined,
     };
 
-    // Your worker should implement this endpoint:
-    // POST /office/messages/send  { to:"+1...", body:"..." }
     const res = await api("/office/messages/send", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -744,11 +739,9 @@ async function commSendMessage() {
 
     setCommStatus("Sent", "ok");
 
-    // auto-load log for that number
     if (els.commSearchTo) els.commSearchTo.value = to;
     await commLoadMessagesForInput();
 
-    // clear message body (keep the To)
     if (els.commBody) {
       els.commBody.value = "";
       updateCharCount();
@@ -759,6 +752,91 @@ async function commSendMessage() {
     setCommStatus(String(e), "err");
   } finally {
     if (els.btnCommSend) els.btnCommSend.disabled = false;
+  }
+}
+
+/* ================================
+   WEBFORMS (NEW)
+================================== */
+
+function wfUpdateCharCount() {
+  if (!els.wfBody || !els.wfCharCount) return;
+  const n = String(els.wfBody.value || "").length;
+  els.wfCharCount.textContent = String(n);
+}
+
+function wfCanSend() {
+  const to = toE164US(els.wfTo?.value || "");
+  const body = String(els.wfBody?.value || "").trim();
+  return !!to && !!body;
+}
+
+function wfUpdateSendButtonState() {
+  if (!els.btnWfSend) return;
+  els.btnWfSend.disabled = !wfCanSend();
+}
+
+function wfBuildTemplate(formName, formLink) {
+  return `Hi! Please complete your ${formName} before your visit with Brook Hollow Family Dentistry.
+
+${formLink}`;
+}
+
+function wfWireFormButtonsOnce() {
+  const btns = Array.from(document.querySelectorAll(".wf-form-btn"));
+  if (!btns.length) return;
+
+  btns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      const formName = btn.dataset.formName || "forms";
+      const formLink = btn.dataset.formLink || "";
+
+      if (els.wfBody) {
+        els.wfBody.value = wfBuildTemplate(formName, formLink);
+        wfUpdateCharCount();
+      }
+
+      setWfStatus("", "");
+      wfUpdateSendButtonState();
+      els.wfBody?.focus();
+    });
+  });
+}
+
+async function wfSendForm() {
+  const to = toE164US(els.wfTo?.value || "");
+  const body = String(els.wfBody?.value || "").trim();
+
+  if (!to) {
+    setWfStatus("Please enter a valid US phone number.", "err");
+    wfUpdateSendButtonState();
+    return;
+  }
+  if (!body) {
+    setWfStatus("Message cannot be empty.", "err");
+    wfUpdateSendButtonState();
+    return;
+  }
+
+  setWfStatus("Sending…", "");
+  if (els.btnWfSend) els.btnWfSend.disabled = true;
+
+  try {
+    await api("/office/messages/send", {
+      method: "POST",
+      body: JSON.stringify({ to, body, context: { source: "webforms" } }),
+    });
+
+    setWfStatus("Sent", "ok");
+    wfUpdateSendButtonState();
+  } catch (e) {
+    setWfStatus(String(e), "err");
+    wfUpdateSendButtonState();
+  } finally {
+    wfUpdateSendButtonState();
   }
 }
 
@@ -791,16 +869,22 @@ function showRoute(route) {
   const r = route || "dashboard";
 
   if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
-  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", r !== "analytics");
+  if (els.routeWebForms) els.routeWebForms.classList.toggle("hidden", r !== "webforms");
   if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
 
   setActiveNav(r);
 
-  // route-specific init
   if (r === "communication") {
     refreshCommPatientSelect();
     updateCharCount();
     setCommStatus("", "");
+  }
+
+  if (r === "webforms") {
+    wfWireFormButtonsOnce();
+    wfUpdateCharCount();
+    wfUpdateSendButtonState();
+    setWfStatus("", "");
   }
 
   if (window.innerWidth <= 900) closeSidebar();
@@ -808,7 +892,7 @@ function showRoute(route) {
 
 function parseHashRoute() {
   const h = (location.hash || "").replace("#/", "").trim();
-  if (h === "analytics" || h === "communication" || h === "dashboard") return h;
+  if (h === "webforms" || h === "communication" || h === "dashboard") return h;
   return "dashboard";
 }
 
@@ -818,11 +902,9 @@ function wireDashboardOnce() {
   if (uiWired) return;
   uiWired = true;
 
-  // sidebar controls
   els.btnMenu?.addEventListener("click", toggleSidebar);
   els.sidebarOverlay?.addEventListener("click", closeSidebar);
 
-  // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => {
       const route = item.dataset.route || "dashboard";
@@ -840,12 +922,9 @@ function wireDashboardOnce() {
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
 
-  // delete
   els.btnDeleteSelected?.addEventListener("click", deleteSelected);
 
-  // communication wiring
   els.btnCommRefresh?.addEventListener("click", () => {
-    // refresh dashboard data so comm has newest bookings
     loadAll().then(() => {
       refreshCommPatientSelect();
       setCommStatus("Refreshed", "ok");
@@ -860,7 +939,6 @@ function wireDashboardOnce() {
     }
     applySelectedPatientToCommUI(cid);
 
-    // Auto-load message log if we have a valid number
     const maybeTo = toE164US(els.commTo?.value || "");
     if (maybeTo) {
       if (els.commSearchTo) els.commSearchTo.value = maybeTo;
@@ -875,6 +953,23 @@ function wireDashboardOnce() {
   els.commSearchTo?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") commLoadMessagesForInput();
   });
+
+  // WebForms wiring
+  els.wfTo?.addEventListener("input", () => {
+    setWfStatus("", "");
+    wfUpdateSendButtonState();
+  });
+
+  els.wfBody?.addEventListener("input", () => {
+    setWfStatus("", "");
+    wfUpdateCharCount();
+    wfUpdateSendButtonState();
+  });
+
+  els.btnWfSend?.addEventListener("click", wfSendForm);
+
+  // Wire buttons now too (safe)
+  wfWireFormButtonsOnce();
 
   const doLogout = () => {
     clearAuth();
@@ -919,9 +1014,7 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
-
     showRoute(parseHashRoute());
-
     await loadAll();
   } catch (err) {
     clearAuth();
