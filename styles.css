@@ -595,10 +595,56 @@ td.col-select {
 }
 
 /* =========================================================
+   WEBFORMS PAGE (NEW)
+========================================================= */
+.webforms-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
+.wf-forms-list {
+  display: grid;
+  gap: 12px;
+}
+
+.wf-form-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.75);
+  border-radius: 14px;
+  padding: 14px 14px;
+  cursor: pointer;
+  transition: transform .06s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.wf-form-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0,0,0,.08);
+}
+
+.wf-form-btn.active {
+  border-color: rgba(111,143,122,.65);
+  box-shadow: 0 12px 24px rgba(111,143,122,.18);
+  background: rgba(111,143,122,.10);
+}
+
+.wf-form-name {
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.wf-form-sub {
+  font-size: 12px;
+  color: rgba(31,42,36,.75);
+}
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
   .comm-grid { grid-template-columns: 1fr; }
+  .webforms-grid { grid-template-columns: 1fr; }
   .sidebar.open { width: 260px; }
 }
