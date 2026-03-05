@@ -595,10 +595,36 @@ td.col-select {
 }
 
 /* =========================================================
-   WEBFORMS PAGE (NEW)
+   WEBFORMS PAGE (UPDATED)
 ========================================================= */
 .webforms-grid {
   grid-template-columns: 2fr 1fr;
+}
+
+/* ✅ stack fields vertically */
+.webforms-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.webforms-compose .field {
+  width: 100%;
+}
+
+/* ✅ make message preview bigger */
+.webforms-compose #wfBody {
+  min-height: 180px;
+  resize: vertical;
+}
+
+/* ✅ send button goes under textarea */
+.wf-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .wf-forms-list {
