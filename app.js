@@ -7,11 +7,9 @@ let pieChart = null;
 const AUTH_STORAGE_KEY = "bhfd_office_auth_basic";
 
 const els = {
-  // views
   loginView: document.getElementById("loginView"),
   dashboardView: document.getElementById("dashboardView"),
 
-  // login
   loginForm: document.getElementById("loginForm"),
   loginUser: document.getElementById("loginUser"),
   loginPass: document.getElementById("loginPass"),
@@ -19,16 +17,13 @@ const els = {
   loginError: document.getElementById("loginError"),
   btnSubmitLogin: document.getElementById("btnSubmitLogin"),
 
-  // dashboard actions
   btnLogout: document.getElementById("btnLogout"),
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
-  // delete UI
   btnDeleteSelected: document.getElementById("btnDeleteSelected"),
   selectedCount: document.getElementById("selectedCount"),
 
-  // dashboard fields
   statusText: document.getElementById("statusText"),
   startDate: document.getElementById("startDate"),
   endDate: document.getElementById("endDate"),
@@ -37,19 +32,16 @@ const els = {
   bookingsBody: document.getElementById("bookingsBody"),
   searchInput: document.getElementById("searchInput"),
 
-  // sidebar
   sidebar: document.getElementById("sidebar"),
   btnMenu: document.getElementById("btnMenu"),
   sidebarOverlay: document.getElementById("sidebarOverlay"),
   btnLogoutSide: document.getElementById("btnLogoutSide"),
 
-  // route sections
   routeDashboard: document.getElementById("route-dashboard"),
-  routeAnalytics: document.getElementById("route-analytics"), // kept for safety if still in HTML
+  routeAnalytics: document.getElementById("route-analytics"),
   routeWebforms: document.getElementById("route-webforms"),
   routeCommunication: document.getElementById("route-communication"),
 
-  // communication UI (UNCHANGED)
   btnCommRefresh: document.getElementById("btnCommRefresh"),
   commPatientSelect: document.getElementById("commPatientSelect"),
   commTo: document.getElementById("commTo"),
@@ -63,11 +55,15 @@ const els = {
   commSelAppt: document.getElementById("commSelAppt"),
   commSelConf: document.getElementById("commSelConf"),
 
-  commSearchTo: document.getElementById("commSearchTo"),
-  btnCommLoad: document.getElementById("btnCommLoad"),
   commMessagesBody: document.getElementById("commMessagesBody"),
+  btnCommLoad: document.getElementById("btnCommLoad"),
+  commThreadList: document.getElementById("commThreadList"),
+  commThreadSearch: document.getElementById("commThreadSearch"),
+  commInboxMeta: document.getElementById("commInboxMeta"),
+  commThreadName: document.getElementById("commThreadName"),
+  commThreadPhone: document.getElementById("commThreadPhone"),
+  commPatientContext: document.getElementById("commPatientContext"),
 
-  // webforms UI
   wfTo: document.getElementById("wfTo"),
   wfBody: document.getElementById("wfBody"),
   wfCharCount: document.getElementById("wfCharCount"),
@@ -76,6 +72,9 @@ const els = {
 };
 
 let cachedRows = [];
+let cachedConversations = [];
+let selectedThreadPhone = "";
+let selectedThreadName = "";
 let uiWired = false;
 
 const selectedIds = new Set();
@@ -203,7 +202,7 @@ async function api(path, init = {}) {
   return data;
 }
 
-/* ---------------- Render helpers ---------------- */
+/* ---------------- General helpers ---------------- */
 
 function apptTypeLabel(t) {
   const x = String(t || "").toLowerCase();
@@ -237,6 +236,84 @@ function escapeHtml(s) {
     .replace(/'/g, "&#039;");
 }
 
+function digitsOnly(s) {
+  return String(s || "").replace(/\D/g, "");
+}
+
+function toE164US(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+
+  if (raw.startsWith("+")) {
+    const d = "+" + digitsOnly(raw);
+    if (/^\+1\d{10}$/.test(d)) return d;
+    return null;
+  }
+
+  const d = digitsOnly(raw);
+  if (d.length === 10) return `+1${d}`;
+  if (d.length === 11 && d.startsWith("1")) return `+${d}`;
+  return null;
+}
+
+function prettyPhone(input) {
+  const e164 = toE164US(input);
+  if (!e164) return input || "—";
+  const d = e164.replace("+1", "");
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+function formatMessageDate(value) {
+  const raw = String(value || "");
+  if (!raw) return "—";
+
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw.replace("T", " ").slice(0, 19);
+
+  return d.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function messageBody(m) {
+  return String(m.body || m.message || m.Body || "").trim();
+}
+
+function messageDate(m) {
+  return String(m.created_at || m.date || m.createdAt || m.timestamp || "").trim();
+}
+
+function messageTo(m) {
+  return String(m.to || m.To || m.recipient || "").trim();
+}
+
+function messageFrom(m) {
+  return String(m.from || m.From || m.sender || "").trim();
+}
+
+function messageStatus(m) {
+  return String(m.status || m.Status || "").trim() || "sent";
+}
+
+function messageDirection(m) {
+  const dir = String(m.direction || m.Direction || "").toLowerCase();
+
+  if (dir.includes("in")) return "inbound";
+  if (dir.includes("out")) return "outbound";
+
+  const to = toE164US(messageTo(m));
+  const from = toE164US(messageFrom(m));
+  const selected = toE164US(selectedThreadPhone);
+
+  if (selected && from === selected) return "inbound";
+  if (selected && to === selected) return "outbound";
+
+  return "outbound";
+}
+
 /* ---------------- Selection UI ---------------- */
 
 function updateSelectionUI() {
@@ -262,10 +339,10 @@ function clearSelection() {
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
-  // Drop selections no longer present
   const idsInTable = new Set(
     cachedRows.map((r) => String(r.confirmation_id || "").trim()).filter(Boolean)
   );
+
   for (const id of Array.from(selectedIds)) {
     if (!idsInTable.has(id)) selectedIds.delete(id);
   }
@@ -326,7 +403,6 @@ function renderTable(rows) {
     `;
   }).join("");
 
-  // Checkbox wiring
   els.bookingsBody.querySelectorAll("tr").forEach((tr) => {
     const cid = String(tr.getAttribute("data-confirmation-id") || "").trim();
     const cb = tr.querySelector(".row-select");
@@ -352,6 +428,7 @@ function buildLineSeries(bookings, start, end) {
   const labels = [];
   const counts = [];
   let cur = s;
+
   while (cur <= e) {
     labels.push(cur);
     counts.push(0);
@@ -482,6 +559,7 @@ function exportCsv() {
 
 async function loadAll() {
   setStatus("Loading…", "");
+
   try {
     const start = (els.startDate?.value || "").trim();
     const end = (els.endDate?.value || "").trim();
@@ -509,8 +587,10 @@ async function loadAll() {
 }
 
 /* ---------- Quick range buttons ---------- */
+
 function applyRange(mode) {
   const t = todayYYYYMMDD();
+
   if (mode === "today") {
     if (els.startDate) els.startDate.value = t;
     if (els.endDate) els.endDate.value = t;
@@ -524,6 +604,7 @@ function applyRange(mode) {
       if (els.startDate) els.startDate.value = addDays(t, -(days - 1));
     }
   }
+
   loadAll();
 }
 
@@ -556,30 +637,8 @@ async function deleteSelected() {
 }
 
 /* ================================
-   COMMUNICATION (Portal texting)
-   (UNCHANGED)
+   COMMUNICATION CENTER
 ================================== */
-
-function digitsOnly(s) {
-  return String(s || "").replace(/\D/g, "");
-}
-
-// US-only E.164 helper
-function toE164US(input) {
-  const raw = String(input || "").trim();
-  if (!raw) return null;
-
-  if (raw.startsWith("+")) {
-    const d = "+" + digitsOnly(raw);
-    if (/^\+1\d{10}$/.test(d)) return d;
-    return null;
-  }
-
-  const d = digitsOnly(raw);
-  if (d.length === 10) return `+1${d}`;
-  if (d.length === 11 && d.startsWith("1")) return `+${d}`;
-  return null;
-}
 
 function commRowPhone(r) {
   return (
@@ -600,15 +659,24 @@ function commRowLabel(r) {
   return `${name} — ${appt} — ${type}`;
 }
 
+function findBookingByPhone(phone) {
+  const e164 = toE164US(phone);
+  if (!e164) return null;
+
+  return (cachedRows || []).find((r) => {
+    const rowPhone = toE164US(commRowPhone(r));
+    return rowPhone === e164;
+  }) || null;
+}
+
 function refreshCommPatientSelect() {
   if (!els.commPatientSelect) return;
 
   const prior = String(els.commPatientSelect.value || "").trim();
-
   const rows = Array.isArray(cachedRows) ? cachedRows : [];
   const options = [];
-
   const seen = new Set();
+
   for (const r of rows) {
     const cid = String(r.confirmation_id || "").trim();
     if (!cid || seen.has(cid)) continue;
@@ -616,20 +684,22 @@ function refreshCommPatientSelect() {
     options.push({ value: cid, label: commRowLabel(r) });
   }
 
-  const html = [
+  els.commPatientSelect.innerHTML = [
     `<option value="">Select from recent bookings…</option>`,
     ...options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
   ].join("");
 
-  els.commPatientSelect.innerHTML = html;
-
   if (prior && seen.has(prior)) {
     els.commPatientSelect.value = prior;
   }
+}
 
-  if (els.commPatientSelect.value) {
-    applySelectedPatientToCommUI(els.commPatientSelect.value);
-  }
+function clearCommPatientContext() {
+  if (els.commSelName) els.commSelName.textContent = "—";
+  if (els.commSelPhone) els.commSelPhone.textContent = "—";
+  if (els.commSelAppt) els.commSelAppt.textContent = "—";
+  if (els.commSelConf) els.commSelConf.textContent = "—";
+  els.commPatientContext?.classList.add("hidden");
 }
 
 function applySelectedPatientToCommUI(confirmationId) {
@@ -637,28 +707,42 @@ function applySelectedPatientToCommUI(confirmationId) {
   const row = (cachedRows || []).find(r => String(r.confirmation_id || "").trim() === cid) || null;
 
   if (!row) {
-    if (els.commSelName) els.commSelName.textContent = "—";
-    if (els.commSelPhone) els.commSelPhone.textContent = "—";
-    if (els.commSelAppt) els.commSelAppt.textContent = "—";
-    if (els.commSelConf) els.commSelConf.textContent = "—";
-    return;
+    clearCommPatientContext();
+    return null;
   }
 
   const name = `${row.patient_first || ""} ${row.patient_last || ""}`.trim() || "—";
   const phone = commRowPhone(row) || "—";
+  const e164 = toE164US(phone);
   const appt = `${row.appointment_date || "—"} at ${row.appointment_time || "—"} • ${apptTypeLabel(row.appointment_type || "")}`;
   const conf = String(row.confirmation_id || "").trim() || "—";
 
   if (els.commSelName) els.commSelName.textContent = name;
-  if (els.commSelPhone) els.commSelPhone.textContent = phone;
+  if (els.commSelPhone) els.commSelPhone.textContent = e164 || phone;
   if (els.commSelAppt) els.commSelAppt.textContent = appt;
   if (els.commSelConf) els.commSelConf.textContent = conf;
+  els.commPatientContext?.classList.remove("hidden");
 
-  if (els.commTo) {
-    const e164 = toE164US(phone);
-    if (e164) els.commTo.value = e164;
-    if (els.commSearchTo && e164) els.commSearchTo.value = e164;
+  if (els.commTo && e164) els.commTo.value = e164;
+
+  selectedThreadPhone = e164 || "";
+  selectedThreadName = name;
+
+  updateThreadHeader(name, e164 || phone);
+
+  return { row, name, phone: e164 || phone };
+}
+
+function applyBookingContextByPhone(phone) {
+  const row = findBookingByPhone(phone);
+  if (!row) {
+    clearCommPatientContext();
+    return null;
   }
+
+  const cid = String(row.confirmation_id || "").trim();
+  if (els.commPatientSelect && cid) els.commPatientSelect.value = cid;
+  return applySelectedPatientToCommUI(cid);
 }
 
 function updateCharCount() {
@@ -667,64 +751,243 @@ function updateCharCount() {
   els.commCharCount.textContent = String(n);
 }
 
-function renderCommMessagesTable(results) {
+function updateThreadHeader(name, phone) {
+  if (els.commThreadName) els.commThreadName.textContent = name || prettyPhone(phone) || "New conversation";
+  if (els.commThreadPhone) els.commThreadPhone.textContent = phone ? prettyPhone(phone) : "Choose a recent message or enter a phone number.";
+}
+
+function buildConversationMap(messages) {
+  const map = new Map();
+
+  for (const m of messages || []) {
+    const to = toE164US(messageTo(m));
+    const from = toE164US(messageFrom(m));
+    const phone = to || from;
+    if (!phone) continue;
+
+    const booking = findBookingByPhone(phone);
+    const bookingName = booking ? `${booking.patient_first || ""} ${booking.patient_last || ""}`.trim() : "";
+    const existing = map.get(phone);
+
+    const created = messageDate(m);
+    const body = messageBody(m);
+    const status = messageStatus(m);
+
+    if (!existing) {
+      map.set(phone, {
+        phone,
+        name: bookingName || prettyPhone(phone),
+        preview: body,
+        status,
+        lastDate: created,
+        count: 1,
+      });
+    } else {
+      existing.count += 1;
+      if (String(created || "") >= String(existing.lastDate || "")) {
+        existing.preview = body;
+        existing.status = status;
+        existing.lastDate = created;
+      }
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => String(b.lastDate || "").localeCompare(String(a.lastDate || "")));
+}
+
+function mergeBookingPhonesIntoConversations(conversations) {
+  const map = new Map(conversations.map((c) => [c.phone, c]));
+
+  for (const row of cachedRows || []) {
+    const phone = toE164US(commRowPhone(row));
+    if (!phone || map.has(phone)) continue;
+
+    const name = `${row.patient_first || ""} ${row.patient_last || ""}`.trim() || prettyPhone(phone);
+    map.set(phone, {
+      phone,
+      name,
+      preview: `${row.appointment_date || "Upcoming"} • ${apptTypeLabel(row.appointment_type || "Appointment")}`,
+      status: "booking",
+      lastDate: row.created_at || "",
+      count: 0,
+    });
+  }
+
+  return Array.from(map.values()).sort((a, b) => String(b.lastDate || "").localeCompare(String(a.lastDate || "")));
+}
+
+function renderThreadList() {
+  if (!els.commThreadList) return;
+
+  const q = String(els.commThreadSearch?.value || "").trim().toLowerCase();
+
+  const filtered = !q
+    ? cachedConversations
+    : cachedConversations.filter((c) => {
+        const blob = `${c.name || ""} ${c.phone || ""} ${c.preview || ""}`.toLowerCase();
+        return blob.includes(q);
+      });
+
+  if (els.commInboxMeta) {
+    els.commInboxMeta.textContent = `${filtered.length} conversation${filtered.length === 1 ? "" : "s"}`;
+  }
+
+  if (!filtered.length) {
+    els.commThreadList.innerHTML = `<div class="comm-empty-thread">No recent conversations found.</div>`;
+    return;
+  }
+
+  els.commThreadList.innerHTML = filtered.map((c) => {
+    const active = toE164US(selectedThreadPhone) === toE164US(c.phone) ? "active" : "";
+    return `
+      <button class="comm-thread-item ${active}" type="button" data-phone="${escapeHtml(c.phone)}" data-name="${escapeHtml(c.name)}">
+        <div class="comm-thread-line">
+          <div class="comm-thread-person">${escapeHtml(c.name || prettyPhone(c.phone))}</div>
+          <div class="comm-thread-date">${escapeHtml(formatMessageDate(c.lastDate))}</div>
+        </div>
+        <div class="comm-thread-preview">${escapeHtml(c.preview || "No message preview")}</div>
+        <div class="comm-thread-status">${escapeHtml(c.status || "")}</div>
+      </button>
+    `;
+  }).join("");
+
+  els.commThreadList.querySelectorAll(".comm-thread-item").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const phone = btn.getAttribute("data-phone") || "";
+      const name = btn.getAttribute("data-name") || prettyPhone(phone);
+      await selectThread(phone, name);
+    });
+  });
+}
+
+async function loadRecentConversations() {
+  if (!els.commThreadList) return;
+
+  if (els.commInboxMeta) els.commInboxMeta.textContent = "Loading conversations…";
+
+  try {
+    const data = await api(`/office/messages?limit=250`);
+    const messages = data.results || data.messages || [];
+    cachedConversations = mergeBookingPhonesIntoConversations(buildConversationMap(messages));
+    renderThreadList();
+  } catch (e) {
+    cachedConversations = mergeBookingPhonesIntoConversations([]);
+    renderThreadList();
+    setCommStatus(`Recent messages loaded from bookings only. ${String(e)}`, "err");
+  }
+}
+
+async function selectThread(phone, name = "") {
+  const e164 = toE164US(phone);
+
+  if (!e164) {
+    setCommStatus("Please enter a valid US phone number.", "err");
+    return;
+  }
+
+  selectedThreadPhone = e164;
+  selectedThreadName = name || prettyPhone(e164);
+
+  if (els.commTo) els.commTo.value = e164;
+
+  updateThreadHeader(selectedThreadName, e164);
+  applyBookingContextByPhone(e164);
+  renderThreadList();
+
+  await commLoadMessagesForPhone(e164);
+}
+
+function renderCommMessages(results) {
   if (!els.commMessagesBody) return;
 
   const rows = Array.isArray(results) ? results : [];
+
   if (!rows.length) {
-    els.commMessagesBody.innerHTML = `<tr><td colspan="4" class="empty">No messages found for this number.</td></tr>`;
+    els.commMessagesBody.innerHTML = `
+      <div class="comm-empty-state">
+        No messages found for this number yet. Type a message below to start the thread.
+      </div>
+    `;
     return;
   }
 
-  els.commMessagesBody.innerHTML = rows.map((m) => {
-    const date = String(m.created_at || m.date || m.createdAt || "").replace("T", " ").slice(0, 19) || "—";
-    const to = String(m.to || m.To || m.recipient || "").trim() || "—";
-    const body = String(m.body || m.message || m.Body || "").trim() || "—";
-    const status = String(m.status || m.Status || "").trim() || "—";
+  const sorted = rows.slice().sort((a, b) => String(messageDate(a)).localeCompare(String(messageDate(b))));
+
+  els.commMessagesBody.innerHTML = sorted.map((m) => {
+    const dir = messageDirection(m);
+    const body = messageBody(m) || "—";
+    const date = formatMessageDate(messageDate(m));
+    const status = messageStatus(m);
 
     return `
-      <tr>
-        <td>${escapeHtml(date)}</td>
-        <td>${escapeHtml(to)}</td>
-        <td>${escapeHtml(body)}</td>
-        <td>${escapeHtml(status)}</td>
-      </tr>
+      <div class="comm-message ${escapeHtml(dir)}">
+        <div class="comm-message-body">${escapeHtml(body)}</div>
+        <div class="comm-message-meta">
+          <span>${escapeHtml(date)}</span>
+          <span>${escapeHtml(status)}</span>
+        </div>
+      </div>
     `;
   }).join("");
+
+  els.commMessagesBody.scrollTop = els.commMessagesBody.scrollHeight;
 }
 
-async function commLoadMessagesForInput() {
-  const raw = (els.commSearchTo?.value || "").trim();
-  const to = toE164US(raw);
+async function commLoadMessagesForPhone(phone) {
+  const to = toE164US(phone);
+
   if (!to) {
-    renderCommMessagesTable([]);
-    setCommStatus("Enter a valid US phone (10 digits or +1…)", "err");
+    renderCommMessages([]);
+    setCommStatus("Enter a valid US phone number.", "err");
     return;
   }
 
-  setCommStatus("Loading messages…", "");
+  setCommStatus("Loading thread…", "");
+
   try {
     const data = await api(`/office/messages?to=${encodeURIComponent(to)}`);
-    renderCommMessagesTable(data.results || data.messages || []);
-    setCommStatus("Loaded", "ok");
+    renderCommMessages(data.results || data.messages || []);
+    setCommStatus("Thread loaded", "ok");
   } catch (e) {
+    renderCommMessages([]);
     setCommStatus(String(e), "err");
   }
 }
 
+async function commLoadMessagesForInput() {
+  const raw = (els.commTo?.value || "").trim();
+  const to = toE164US(raw);
+
+  if (!to) {
+    setCommStatus("Enter a valid US phone number.", "err");
+    return;
+  }
+
+  const booking = applyBookingContextByPhone(to);
+  selectedThreadPhone = to;
+  selectedThreadName = booking?.name || prettyPhone(to);
+  updateThreadHeader(selectedThreadName, to);
+  renderThreadList();
+
+  await commLoadMessagesForPhone(to);
+}
+
 async function commSendMessage() {
-  const toRaw = (els.commTo?.value || "").trim();
+  const toRaw = (els.commTo?.value || selectedThreadPhone || "").trim();
   const body = String(els.commBody?.value || "").trim();
 
   const to = toE164US(toRaw);
+
   if (!to) {
     setCommStatus("Please enter a valid US phone number.", "err");
     return;
   }
+
   if (!body) {
     setCommStatus("Message cannot be empty.", "err");
     return;
   }
+
   if (body.length > 1000) {
     setCommStatus("Message is too long.", "err");
     return;
@@ -747,16 +1010,20 @@ async function commSendMessage() {
       body: JSON.stringify(payload),
     });
 
-    setCommStatus("Sent", "ok");
-
-    if (els.commSearchTo) els.commSearchTo.value = to;
-    await commLoadMessagesForInput();
+    selectedThreadPhone = to;
+    const booking = applyBookingContextByPhone(to);
+    selectedThreadName = booking?.name || selectedThreadName || prettyPhone(to);
+    updateThreadHeader(selectedThreadName, to);
 
     if (els.commBody) {
       els.commBody.value = "";
       updateCharCount();
     }
 
+    await commLoadMessagesForPhone(to);
+    await loadRecentConversations();
+
+    setCommStatus("Sent", "ok");
     return res;
   } catch (e) {
     setCommStatus(String(e), "err");
@@ -766,7 +1033,7 @@ async function commSendMessage() {
 }
 
 /* ================================
-   WEBFORMS (NEW TAB)
+   WEBFORMS
 ================================== */
 
 const WEBFORMS = [
@@ -815,6 +1082,8 @@ function wfAutoFillFromButton(btn) {
 function wfWireButtons() {
   const btns = document.querySelectorAll(".wf-form-btn");
   btns.forEach((btn) => {
+    if (btn.dataset.wired === "1") return;
+    btn.dataset.wired = "1";
     btn.addEventListener("click", () => {
       wfSetActiveButton(btn);
       wfAutoFillFromButton(btn);
@@ -827,10 +1096,12 @@ async function wfSendFormText() {
   const body = String(els.wfBody?.value || "").trim();
 
   const to = toE164US(toRaw);
+
   if (!to) {
     setWfStatus("Please enter a valid US phone number.", "err");
     return;
   }
+
   if (!body) {
     setWfStatus("Message cannot be empty.", "err");
     return;
@@ -840,18 +1111,27 @@ async function wfSendFormText() {
   if (els.btnWfSend) els.btnWfSend.disabled = true;
 
   try {
-    const payload = {
-      to,
-      body,
-      context: { source: "webforms" },
-    };
-
     await api("/office/messages/send", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        to,
+        body,
+        context: { source: "webforms" },
+      }),
     });
 
     setWfStatus("Sent", "ok");
+
+    selectedThreadPhone = to;
+    selectedThreadName = prettyPhone(to);
+
+    if (els.commTo) els.commTo.value = to;
+
+    await loadRecentConversations();
+
+    if (location.hash === "#/communication") {
+      await selectThread(to, prettyPhone(to));
+    }
   } catch (e) {
     setWfStatus(String(e), "err");
   } finally {
@@ -890,15 +1170,20 @@ function showRoute(route) {
   if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
   if (els.routeWebforms) els.routeWebforms.classList.toggle("hidden", r !== "webforms");
   if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
-  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", true); // ensure old analytics stays hidden if present
+  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", true);
 
   setActiveNav(r);
 
-  // route-specific init
   if (r === "communication") {
     refreshCommPatientSelect();
     updateCharCount();
     setCommStatus("", "");
+
+    if (!cachedConversations.length) {
+      loadRecentConversations();
+    } else {
+      renderThreadList();
+    }
   }
 
   if (r === "webforms") {
@@ -923,11 +1208,9 @@ function wireDashboardOnce() {
   if (uiWired) return;
   uiWired = true;
 
-  // sidebar controls
   els.btnMenu?.addEventListener("click", toggleSidebar);
   els.sidebarOverlay?.addEventListener("click", closeSidebar);
 
-  // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => {
       const route = item.dataset.route || "dashboard";
@@ -944,42 +1227,52 @@ function wireDashboardOnce() {
   els.btnRefresh?.addEventListener("click", () => loadAll());
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
-
-  // delete
   els.btnDeleteSelected?.addEventListener("click", deleteSelected);
 
-  // communication wiring
-  els.btnCommRefresh?.addEventListener("click", () => {
-    loadAll().then(() => {
-      refreshCommPatientSelect();
+  els.btnCommRefresh?.addEventListener("click", async () => {
+    try {
+      await loadAll();
+      await loadRecentConversations();
+      if (selectedThreadPhone) await commLoadMessagesForPhone(selectedThreadPhone);
       setCommStatus("Refreshed", "ok");
-    }).catch((e) => setCommStatus(String(e), "err"));
+    } catch (e) {
+      setCommStatus(String(e), "err");
+    }
   });
 
-  els.commPatientSelect?.addEventListener("change", () => {
+  els.commPatientSelect?.addEventListener("change", async () => {
     const cid = String(els.commPatientSelect.value || "").trim();
+
     if (!cid) {
-      applySelectedPatientToCommUI(null);
+      clearCommPatientContext();
       return;
     }
-    applySelectedPatientToCommUI(cid);
 
-    const maybeTo = toE164US(els.commTo?.value || "");
-    if (maybeTo) {
-      if (els.commSearchTo) els.commSearchTo.value = maybeTo;
-      commLoadMessagesForInput();
+    const selected = applySelectedPatientToCommUI(cid);
+    if (selected?.phone) {
+      await selectThread(selected.phone, selected.name);
+    }
+  });
+
+  els.commTo?.addEventListener("input", () => {
+    const to = toE164US(els.commTo.value);
+    if (to) {
+      selectedThreadPhone = to;
+      const booking = applyBookingContextByPhone(to);
+      updateThreadHeader(booking?.name || prettyPhone(to), to);
     }
   });
 
   els.commBody?.addEventListener("input", updateCharCount);
   els.btnCommSend?.addEventListener("click", commSendMessage);
-
   els.btnCommLoad?.addEventListener("click", commLoadMessagesForInput);
-  els.commSearchTo?.addEventListener("keydown", (e) => {
+
+  els.commTo?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") commLoadMessagesForInput();
   });
 
-  // webforms wiring
+  els.commThreadSearch?.addEventListener("input", renderThreadList);
+
   els.wfTo?.addEventListener("input", () => {
     if (els.btnWfSend) els.btnWfSend.disabled = !String(els.wfTo.value || "").trim();
   });
@@ -1033,6 +1326,10 @@ els.loginForm?.addEventListener("submit", async (e) => {
     showRoute(parseHashRoute());
 
     await loadAll();
+
+    if (parseHashRoute() === "communication") {
+      await loadRecentConversations();
+    }
   } catch (err) {
     clearAuth();
     setLoginError("Authentication required to access this page.");
@@ -1059,10 +1356,15 @@ els.loginForm?.addEventListener("submit", async (e) => {
     wireDashboardOnce();
     showRoute(parseHashRoute());
 
-    loadAll().catch(() => {
-      clearAuth();
-      showLogin();
-    });
+    loadAll()
+      .then(() => {
+        if (parseHashRoute() === "communication") return loadRecentConversations();
+        return null;
+      })
+      .catch(() => {
+        clearAuth();
+        showLogin();
+      });
   } else {
     showLogin();
   }
