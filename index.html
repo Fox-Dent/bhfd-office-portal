@@ -13,7 +13,7 @@
   </head>
 
   <body>
-    <!-- ✅ LOGIN PAGE (shows first) -->
+    <!-- LOGIN PAGE -->
     <main id="loginView" class="login-page">
       <div class="login-top">
         <img src="FoxDentLogo.png" alt="FoxDent" class="login-logo" />
@@ -53,12 +53,10 @@
       </section>
     </main>
 
-    <!-- ✅ APP (hidden until logged in) -->
+    <!-- APP -->
     <div id="dashboardView" class="hidden">
-      <!-- Overlay for mobile sidebar -->
       <div id="sidebarOverlay" class="sidebar-overlay hidden"></div>
 
-      <!-- SIDEBAR -->
       <aside id="sidebar" class="sidebar">
         <button id="btnMenu" class="menu-btn" type="button" aria-label="Toggle menu">
           <span class="burger"><span></span></span>
@@ -80,7 +78,6 @@
             <span class="nav-label">Dashboard</span>
           </a>
 
-          <!-- ✅ Analytics replaced with WebForms -->
           <a class="nav-item" href="#/webforms" data-route="webforms">
             <img src="foxdentform.png" class="nav-icon" alt="" aria-hidden="true" />
             <span class="nav-label">WebForms</span>
@@ -99,9 +96,8 @@
         </div>
       </aside>
 
-      <!-- MAIN APP CONTENT -->
       <div class="app-main">
-        <!-- ===== DASHBOARD SECTION ===== -->
+        <!-- DASHBOARD -->
         <section id="route-dashboard">
           <div class="container">
             <header class="header">
@@ -222,7 +218,7 @@
           </div>
         </section>
 
-        <!-- ===== ✅ WEBFORMS SECTION ===== -->
+        <!-- WEBFORMS -->
         <section id="route-webforms" class="hidden">
           <div class="container">
             <header class="header">
@@ -239,7 +235,6 @@
             </header>
 
             <section class="grid webforms-grid">
-              <!-- LEFT: send -->
               <div class="card">
                 <div class="card-top">
                   <div>
@@ -248,7 +243,6 @@
                   </div>
                 </div>
 
-                <!-- ✅ UPDATED: no filters-row here, vertical layout -->
                 <div class="webforms-compose">
                   <div class="field">
                     <label for="wfTo">To</label>
@@ -269,7 +263,6 @@
                 </div>
               </div>
 
-              <!-- RIGHT: choose form -->
               <div class="card">
                 <div class="card-top">
                   <div>
@@ -312,10 +305,10 @@
           </div>
         </section>
 
-        <!-- ===== COMMUNICATION SECTION (UNCHANGED) ===== -->
+        <!-- COMMUNICATION CENTER -->
         <section id="route-communication" class="hidden">
-          <div class="container">
-            <header class="header">
+          <div class="container comm-container">
+            <header class="header comm-page-header">
               <div class="brand">
                 <div class="brand-left">
                   <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
@@ -332,104 +325,89 @@
               </div>
             </header>
 
-            <section class="grid comm-grid">
-              <!-- Compose -->
-              <div class="card">
-                <div class="card-top">
-                  <div>
-                    <div class="card-title">Send a Text</div>
-                    <div class="card-sub">Choose a patient or enter a phone number.</div>
-                  </div>
-                </div>
+            <section class="comm-shell card">
+              <aside class="comm-inbox">
+                <div class="comm-new-box">
+                  <div class="comm-new-title">New Message</div>
 
-                <div class="filters-row comm-compose">
                   <div class="field">
-                    <label for="commPatientSelect">Patient</label>
+                    <label for="commTo">To</label>
+                    <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
+                  </div>
+
+                  <div class="field">
+                    <label for="commPatientSelect">Recent Booking</label>
                     <select id="commPatientSelect">
                       <option value="">Select from recent bookings…</option>
                     </select>
                   </div>
 
-                  <div class="field">
-                    <label for="commTo">To</label>
-                    <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
-                    <div class="hint">US numbers only. Paste 10 digits or +1 format.</div>
-                  </div>
-
-                  <div class="field">
-                    <label for="commBody">Message</label>
-                    <textarea id="commBody" rows="4" placeholder="Type your message…"></textarea>
-                    <div class="hint"><span id="commCharCount">0</span>/320</div>
-                  </div>
-
-                  <div class="comm-actions">
-                    <button id="btnCommSend" class="btn" type="button">Send Text</button>
-                    <div id="commSendStatus" class="status-text"></div>
-                  </div>
+                  <div class="hint">Type any number or choose from recent bookings.</div>
                 </div>
-              </div>
 
-              <!-- Selected patient details -->
-              <div class="card">
-                <div class="card-top">
+                <div class="comm-search-wrap">
+                  <input id="commThreadSearch" class="comm-thread-search" type="search" placeholder="Search name or number…" />
+                </div>
+
+                <div class="comm-inbox-top">
                   <div>
-                    <div class="card-title">Selected Patient</div>
-                    <div class="card-sub">Quick context from the booking log.</div>
+                    <div class="comm-section-title">Recent Messages</div>
+                    <div id="commInboxMeta" class="comm-section-sub">Loading conversations…</div>
                   </div>
                 </div>
 
-                <div class="comm-patient card-inner">
-                  <div class="kv">
-                    <div class="k">Name</div>
-                    <div id="commSelName" class="v">—</div>
+                <div id="commThreadList" class="comm-thread-list">
+                  <div class="comm-empty-thread">No conversations loaded yet.</div>
+                </div>
+              </aside>
+
+              <main class="comm-thread-panel">
+                <div class="comm-thread-header">
+                  <div>
+                    <div id="commThreadName" class="comm-thread-name">Select a conversation</div>
+                    <div id="commThreadPhone" class="comm-thread-phone">Choose a recent message or enter a phone number.</div>
                   </div>
-                  <div class="kv">
-                    <div class="k">Phone</div>
-                    <div id="commSelPhone" class="v">—</div>
-                  </div>
-                  <div class="kv">
-                    <div class="k">Appt</div>
-                    <div id="commSelAppt" class="v">—</div>
-                  </div>
-                  <div class="kv">
-                    <div class="k">Confirmation</div>
-                    <div id="commSelConf" class="v">—</div>
+
+                  <div class="comm-thread-actions">
+                    <button id="btnCommLoad" class="btn btn-secondary" type="button">Load Thread</button>
                   </div>
                 </div>
-              </div>
-            </section>
 
-            <!-- Message log -->
-            <section class="card table-card">
-              <div class="table-head">
-                <div>
-                  <div class="card-title">Message Log</div>
-                  <div class="card-sub">Shows queued/sent/delivered/failed for the selected number.</div>
+                <div id="commPatientContext" class="comm-patient-context hidden">
+                  <div class="context-chip">
+                    <span>Name</span>
+                    <strong id="commSelName">—</strong>
+                  </div>
+                  <div class="context-chip">
+                    <span>Phone</span>
+                    <strong id="commSelPhone">—</strong>
+                  </div>
+                  <div class="context-chip">
+                    <span>Appt</span>
+                    <strong id="commSelAppt">—</strong>
+                  </div>
+                  <div class="context-chip">
+                    <span>Confirmation</span>
+                    <strong id="commSelConf">—</strong>
+                  </div>
                 </div>
 
-                <div class="table-tools">
-                  <input id="commSearchTo" class="search" type="search" placeholder="Enter phone to load messages (e.g. 2105555555)" />
-                  <button id="btnCommLoad" class="btn btn-secondary" type="button">Load</button>
+                <div id="commMessagesBody" class="comm-messages">
+                  <div class="comm-empty-state">
+                    Select a conversation or enter a phone number to view messages.
+                  </div>
                 </div>
-              </div>
 
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>To</th>
-                      <th>Message</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody id="commMessagesBody">
-                    <tr>
-                      <td colspan="4" class="empty">Select a patient or enter a number to view messages.</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                <div class="comm-compose-bar">
+                  <textarea id="commBody" rows="1" placeholder="Type your message…"></textarea>
+                  <button id="btnCommSend" class="btn comm-send-btn" type="button">Send</button>
+                </div>
+
+                <div class="comm-compose-footer">
+                  <span><span id="commCharCount">0</span>/320</span>
+                  <span id="commSendStatus" class="status-text"></span>
+                </div>
+              </main>
             </section>
 
             <footer class="footer">
