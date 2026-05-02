@@ -307,8 +307,8 @@
 
         <!-- COMMUNICATION CENTER -->
         <section id="route-communication" class="hidden">
-          <div class="container comm-container">
-            <header class="header comm-page-header">
+          <div class="container">
+            <header class="header">
               <div class="brand">
                 <div class="brand-left">
                   <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
@@ -325,89 +325,101 @@
               </div>
             </header>
 
-            <section class="comm-shell card">
-              <aside class="comm-inbox">
-                <div class="comm-new-box">
-                  <div class="comm-new-title">New Message</div>
-
-                  <div class="field">
-                    <label for="commTo">To</label>
-                    <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
+            <section class="grid comm-grid">
+              <div class="card">
+                <div class="card-top">
+                  <div>
+                    <div class="card-title">Send a Text</div>
+                    <div class="card-sub">Choose a patient or enter a phone number.</div>
                   </div>
+                </div>
 
+                <div class="filters-row comm-compose">
                   <div class="field">
-                    <label for="commPatientSelect">Recent Booking</label>
+                    <label for="commPatientSelect">Patient</label>
                     <select id="commPatientSelect">
                       <option value="">Select from recent bookings…</option>
                     </select>
                   </div>
 
-                  <div class="hint">Type any number or choose from recent bookings.</div>
-                </div>
+                  <div class="field">
+                    <label for="commTo">To</label>
+                    <input id="commTo" type="tel" placeholder="+1 (210) 555-5555" />
+                    <div class="hint">US numbers only. Paste 10 digits or +1 format.</div>
+                  </div>
 
-                <div class="comm-search-wrap">
-                  <input id="commThreadSearch" class="comm-thread-search" type="search" placeholder="Search name or number…" />
-                </div>
+                  <div class="field">
+                    <label for="commBody">Message</label>
+                    <textarea id="commBody" rows="4" placeholder="Type your message…"></textarea>
+                    <div class="hint"><span id="commCharCount">0</span>/320</div>
+                  </div>
 
-                <div class="comm-inbox-top">
+                  <div class="comm-actions">
+                    <button id="btnCommSend" class="btn" type="button">Send Text</button>
+                    <div id="commSendStatus" class="status-text"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-top">
                   <div>
-                    <div class="comm-section-title">Recent Messages</div>
-                    <div id="commInboxMeta" class="comm-section-sub">Loading conversations…</div>
+                    <div class="card-title">Selected Patient</div>
+                    <div class="card-sub">Quick context from the booking log.</div>
                   </div>
                 </div>
 
-                <div id="commThreadList" class="comm-thread-list">
-                  <div class="comm-empty-thread">No conversations loaded yet.</div>
-                </div>
-              </aside>
-
-              <main class="comm-thread-panel">
-                <div class="comm-thread-header">
-                  <div>
-                    <div id="commThreadName" class="comm-thread-name">Select a conversation</div>
-                    <div id="commThreadPhone" class="comm-thread-phone">Choose a recent message or enter a phone number.</div>
+                <div class="comm-patient card-inner">
+                  <div class="kv">
+                    <div class="k">Name</div>
+                    <div id="commSelName" class="v">—</div>
                   </div>
-
-                  <div class="comm-thread-actions">
-                    <button id="btnCommLoad" class="btn btn-secondary" type="button">Load Thread</button>
+                  <div class="kv">
+                    <div class="k">Phone</div>
+                    <div id="commSelPhone" class="v">—</div>
                   </div>
-                </div>
-
-                <div id="commPatientContext" class="comm-patient-context hidden">
-                  <div class="context-chip">
-                    <span>Name</span>
-                    <strong id="commSelName">—</strong>
+                  <div class="kv">
+                    <div class="k">Appt</div>
+                    <div id="commSelAppt" class="v">—</div>
                   </div>
-                  <div class="context-chip">
-                    <span>Phone</span>
-                    <strong id="commSelPhone">—</strong>
-                  </div>
-                  <div class="context-chip">
-                    <span>Appt</span>
-                    <strong id="commSelAppt">—</strong>
-                  </div>
-                  <div class="context-chip">
-                    <span>Confirmation</span>
-                    <strong id="commSelConf">—</strong>
+                  <div class="kv">
+                    <div class="k">Confirmation</div>
+                    <div id="commSelConf" class="v">—</div>
                   </div>
                 </div>
+              </div>
+            </section>
 
-                <div id="commMessagesBody" class="comm-messages">
-                  <div class="comm-empty-state">
-                    Select a conversation or enter a phone number to view messages.
-                  </div>
+            <section class="card table-card">
+              <div class="table-head">
+                <div>
+                  <div class="card-title">Message Log</div>
+                  <div class="card-sub">Shows queued/sent/delivered/failed for the selected number.</div>
                 </div>
 
-                <div class="comm-compose-bar">
-                  <textarea id="commBody" rows="1" placeholder="Type your message…"></textarea>
-                  <button id="btnCommSend" class="btn comm-send-btn" type="button">Send</button>
+                <div class="table-tools">
+                  <input id="commSearchTo" class="search" type="search" placeholder="Enter phone to load messages (e.g. 2105555555)" />
+                  <button id="btnCommLoad" class="btn btn-secondary" type="button">Load</button>
                 </div>
+              </div>
 
-                <div class="comm-compose-footer">
-                  <span><span id="commCharCount">0</span>/320</span>
-                  <span id="commSendStatus" class="status-text"></span>
-                </div>
-              </main>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>To</th>
+                      <th>Message</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="commMessagesBody">
+                    <tr>
+                      <td colspan="4" class="empty">Select a patient or enter a number to view messages.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </section>
 
             <footer class="footer">
