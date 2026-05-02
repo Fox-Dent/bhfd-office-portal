@@ -536,321 +536,54 @@ td.col-select {
 #btnDeleteSelected { white-space: nowrap; }
 
 /* =========================================================
-   COMMUNICATION CENTER - MESSAGING STYLE
+   COMMUNICATION PAGE
 ========================================================= */
-.comm-container {
-  max-width: 1280px;
+.comm-grid {
+  grid-template-columns: 2fr 1fr;
 }
 
-.comm-page-header {
-  margin-bottom: 14px;
-}
-
-.comm-shell {
-  padding: 0;
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  height: calc(100vh - 150px);
-  min-height: 620px;
-  overflow: hidden;
-}
-
-.comm-inbox {
-  border-right: 1px solid #e3ddd3;
-  background: rgba(250,248,244,.95);
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.comm-new-box {
-  padding: 14px;
-  border-bottom: 1px solid #e3ddd3;
-  display: grid;
-  gap: 10px;
-  background: #fff;
-}
-
-.comm-new-title {
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.comm-new-box .field input,
-.comm-new-box .field select {
+.comm-compose .field {
   width: 100%;
 }
 
-.comm-search-wrap {
-  padding: 12px 14px;
-  border-bottom: 1px solid #e3ddd3;
-  background: #fff;
-}
-
-.comm-thread-search {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #d7d0c6;
-  outline: none;
-  font: inherit;
-}
-
-.comm-thread-search:focus {
-  border-color: rgba(111,143,122,.65);
-  box-shadow: 0 0 0 3px rgba(111,143,122,.15);
-}
-
-.comm-inbox-top {
-  padding: 12px 14px 8px;
-}
-
-.comm-section-title {
-  font-size: 14px;
-  font-weight: 900;
-}
-
-.comm-section-sub {
-  font-size: 12px;
-  color: #6b776f;
-}
-
-.comm-thread-list {
-  overflow-y: auto;
-  padding: 8px;
-  display: grid;
-  gap: 6px;
-}
-
-.comm-thread-item {
-  width: 100%;
-  border: 1px solid transparent;
-  background: transparent;
-  text-align: left;
-  border-radius: 14px;
-  padding: 12px;
-  cursor: pointer;
-  display: grid;
-  gap: 4px;
-}
-
-.comm-thread-item:hover {
-  background: rgba(111,143,122,.09);
-  border-color: rgba(111,143,122,.18);
-}
-
-.comm-thread-item.active {
-  background: rgba(111,143,122,.16);
-  border-color: rgba(111,143,122,.34);
-}
-
-.comm-thread-line {
+.comm-actions {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: baseline;
-}
-
-.comm-thread-person {
-  font-size: 14px;
-  font-weight: 900;
-  color: #1f2a24;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comm-thread-date {
-  font-size: 11px;
-  color: #6b776f;
-  flex: 0 0 auto;
-}
-
-.comm-thread-preview {
-  font-size: 12px;
-  color: rgba(31,42,36,.70);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comm-thread-status {
-  font-size: 11px;
-  font-weight: 800;
-  color: #6f8f7a;
-}
-
-.comm-empty-thread {
-  color: #6b776f;
-  font-size: 13px;
-  padding: 18px 12px;
-  text-align: center;
-}
-
-.comm-thread-panel {
-  background: #fff;
-  display: grid;
-  grid-template-rows: auto auto 1fr auto auto;
-  min-width: 0;
-}
-
-.comm-thread-header {
-  padding: 16px 18px;
-  border-bottom: 1px solid #e3ddd3;
-  display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-}
-
-.comm-thread-name {
-  font-size: 20px;
-  font-weight: 950;
-}
-
-.comm-thread-phone {
-  font-size: 13px;
-  color: #6b776f;
-  margin-top: 2px;
-}
-
-.comm-thread-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.comm-patient-context {
-  padding: 10px 14px;
-  border-bottom: 1px solid #e3ddd3;
-  background: rgba(244,239,231,.55);
-  display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
-  gap: 8px;
-}
-
-.context-chip {
-  background: #fff;
-  border: 1px solid #e3ddd3;
-  border-radius: 12px;
-  padding: 8px 10px;
-  min-width: 0;
-}
-
-.context-chip span {
-  display: block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  color: #6b776f;
-  font-weight: 900;
-  margin-bottom: 3px;
-}
-
-.context-chip strong {
-  display: block;
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.comm-messages {
-  overflow-y: auto;
-  padding: 18px;
-  background:
-    radial-gradient(circle at top left, rgba(111,143,122,.08), transparent 28%),
-    #fbfaf7;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.comm-message {
-  max-width: 72%;
-  border-radius: 16px;
-  padding: 10px 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.05);
-}
-
-.comm-message.outbound {
-  align-self: flex-end;
-  background: rgba(111,143,122,.18);
-  border: 1px solid rgba(111,143,122,.24);
-}
-
-.comm-message.inbound {
-  align-self: flex-start;
-  background: #fff;
-  border: 1px solid #e3ddd3;
-}
-
-.comm-message-body {
-  font-size: 14px;
-  line-height: 1.35;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.comm-message-meta {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #6b776f;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
   flex-wrap: wrap;
 }
 
-.comm-empty-state {
-  margin: auto;
-  max-width: 360px;
-  text-align: center;
-  color: #6b776f;
-  font-size: 14px;
-}
-
-.comm-compose-bar {
-  border-top: 1px solid #e3ddd3;
-  padding: 12px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: end;
-  background: #fff;
-}
-
-.comm-compose-bar textarea {
-  width: 100%;
-  min-height: 44px;
-  max-height: 130px;
-  resize: vertical;
-  border: 1px solid #d7d0c6;
-  border-radius: 12px;
-  padding: 11px 12px;
-  font: inherit;
-  outline: none;
-}
-
-.comm-compose-bar textarea:focus {
-  border-color: rgba(111,143,122,.65);
-  box-shadow: 0 0 0 3px rgba(111,143,122,.15);
-}
-
-.comm-send-btn {
-  min-height: 44px;
-  border-radius: 12px;
-  padding: 0 18px;
-}
-
-.comm-compose-footer {
-  padding: 0 14px 12px;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
+.hint {
   font-size: 12px;
-  color: #6b776f;
-  background: #fff;
+  color: #4a5a51;
+  opacity: 0.9;
+}
+
+.card-inner {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e3ddd3;
+  background: rgba(244,239,231,.55);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(0,0,0,.08);
+}
+.kv:last-child { border-bottom: none; }
+
+.kv .k {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(31,42,36,.75);
+}
+.kv .v {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* =========================================================
@@ -921,72 +654,12 @@ td.col-select {
   color: rgba(31,42,36,.75);
 }
 
-.hint {
-  font-size: 12px;
-  color: #4a5a51;
-  opacity: 0.9;
-}
-
-.card-inner {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid #e3ddd3;
-  background: rgba(244,239,231,.55);
-}
-
 /* =========================================================
    RESPONSIVE
 ========================================================= */
-@media (max-width: 1000px) {
-  .comm-shell {
-    grid-template-columns: 1fr;
-    height: auto;
-    min-height: unset;
-  }
-
-  .comm-inbox {
-    border-right: none;
-    border-bottom: 1px solid #e3ddd3;
-    max-height: 460px;
-  }
-
-  .comm-thread-panel {
-    min-height: 620px;
-  }
-
-  .comm-patient-context {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
-  }
-}
-
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; }
+  .comm-grid { grid-template-columns: 1fr; }
   .webforms-grid { grid-template-columns: 1fr; }
   .sidebar.open { width: 260px; }
-}
-
-@media (max-width: 700px) {
-  .app-main {
-    margin-left: 0;
-    padding-left: 72px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .comm-thread-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .comm-patient-context {
-    grid-template-columns: 1fr;
-  }
-
-  .comm-message {
-    max-width: 90%;
-  }
 }
