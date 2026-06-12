@@ -24,7 +24,7 @@ const els = {
   btnRefresh: document.getElementById("btnRefresh"),
   btnExport: document.getElementById("btnExport"),
 
-  // NEW delete UI
+  // delete UI
   btnDeleteSelected: document.getElementById("btnDeleteSelected"),
   selectedCount: document.getElementById("selectedCount"),
 
@@ -45,26 +45,6 @@ const els = {
 
   // route sections
   routeDashboard: document.getElementById("route-dashboard"),
-  routeAnalytics: document.getElementById("route-analytics"),
-  routeCommunication: document.getElementById("route-communication"),
-
-  // communication UI
-  btnCommRefresh: document.getElementById("btnCommRefresh"),
-  commPatientSelect: document.getElementById("commPatientSelect"),
-  commTo: document.getElementById("commTo"),
-  commBody: document.getElementById("commBody"),
-  commCharCount: document.getElementById("commCharCount"),
-  btnCommSend: document.getElementById("btnCommSend"),
-  commSendStatus: document.getElementById("commSendStatus"),
-
-  commSelName: document.getElementById("commSelName"),
-  commSelPhone: document.getElementById("commSelPhone"),
-  commSelAppt: document.getElementById("commSelAppt"),
-  commSelConf: document.getElementById("commSelConf"),
-
-  commSearchTo: document.getElementById("commSearchTo"),
-  btnCommLoad: document.getElementById("btnCommLoad"),
-  commMessagesBody: document.getElementById("commMessagesBody"),
 };
 
 let cachedRows = [];
@@ -99,13 +79,6 @@ function setStatus(text, mode = "") {
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
-}
-
-function setCommStatus(text, mode = "") {
-  if (!els.commSendStatus) return;
-  els.commSendStatus.textContent = text || "";
-  els.commSendStatus.classList.remove("ok", "err");
-  if (mode) els.commSendStatus.classList.add(mode);
 }
 
 /* ---------------- Date helpers ---------------- */
@@ -246,10 +219,10 @@ function clearSelection() {
 function renderTable(rows) {
   cachedRows = Array.isArray(rows) ? rows : [];
 
-  // Drop selections no longer present
   const idsInTable = new Set(
     cachedRows.map((r) => String(r.confirmation_id || "").trim()).filter(Boolean)
   );
+
   for (const id of Array.from(selectedIds)) {
     if (!idsInTable.has(id)) selectedIds.delete(id);
   }
@@ -259,19 +232,25 @@ function renderTable(rows) {
     ? cachedRows
     : cachedRows.filter((r) => {
         const blob = [
-          r.patient_first, r.patient_last, r.patient_status,
-          r.appointment_date, r.appointment_time, r.appointment_type,
-          r.insurance, r.insurance_carrier, r.carrier, r.created_at,
+          r.patient_first,
+          r.patient_last,
+          r.patient_status,
+          r.appointment_date,
+          r.appointment_time,
+          r.appointment_type,
+          r.insurance,
+          r.insurance_carrier,
+          r.carrier,
+          r.created_at,
           r.confirmation_id
         ].map((x) => String(x || "").toLowerCase()).join(" ");
+
         return blob.includes(q);
       });
 
   if (!filtered.length) {
     els.bookingsBody.innerHTML = `<tr><td colspan="9" class="empty">No matching bookings.</td></tr>`;
     updateSelectionUI();
-    // also refresh comm patients list if you're on comm route
-    refreshCommPatientSelect();
     return;
   }
 
@@ -309,7 +288,6 @@ function renderTable(rows) {
     `;
   }).join("");
 
-  // Checkbox wiring
   els.bookingsBody.querySelectorAll("tr").forEach((tr) => {
     const cid = String(tr.getAttribute("data-confirmation-id") || "").trim();
     const cb = tr.querySelector(".row-select");
@@ -323,7 +301,6 @@ function renderTable(rows) {
   });
 
   updateSelectionUI();
-  refreshCommPatientSelect();
 }
 
 /* ---------------- Charts ---------------- */
@@ -335,6 +312,7 @@ function buildLineSeries(bookings, start, end) {
   const labels = [];
   const counts = [];
   let cur = s;
+
   while (cur <= e) {
     labels.push(cur);
     counts.push(0);
@@ -378,10 +356,19 @@ function renderLineChart(labels, counts) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false }
+      },
       scales: {
-        x: { ticks: { autoSkip: true, maxTicksLimit: 10 }, grid: { color: "rgba(0,0,0,.04)" } },
-        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "rgba(0,0,0,.04)" } },
+        x: {
+          ticks: { autoSkip: true, maxTicksLimit: 10 },
+          grid: { color: "rgba(0,0,0,.04)" }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          grid: { color: "rgba(0,0,0,.04)" }
+        },
       }
     }
   });
@@ -391,6 +378,7 @@ function renderPieChart(newCount, returningCount) {
   const ctx = document.getElementById("pieChart");
   const totalNew = Number(newCount || 0);
   const totalRet = Number(returningCount || 0);
+
   els.newMeta.textContent = `${totalNew} new • ${totalRet} returning`;
 
   if (pieChart) pieChart.destroy();
@@ -406,7 +394,11 @@ function renderPieChart(newCount, returningCount) {
         borderWidth: 2
       }]
     },
-    options: { plugins: { legend: { display: false } } }
+    options: {
+      plugins: {
+        legend: { display: false }
+      }
+    }
   });
 }
 
@@ -420,17 +412,38 @@ function csvEscape(v) {
 
 function exportCsv() {
   const q = (els.searchInput.value || "").trim().toLowerCase();
-  const rows = !q ? cachedRows : cachedRows.filter((r) => {
-    const blob = [
-      r.patient_first, r.patient_last, r.patient_status,
-      r.appointment_date, r.appointment_time, r.appointment_type,
-      r.insurance, r.insurance_carrier, r.carrier, r.created_at,
-      r.confirmation_id
-    ].map((x) => String(x || "").toLowerCase()).join(" ");
-    return blob.includes(q);
-  });
 
-  const header = ["Date Booked","Patient Name","Patient DOB","Patient Status","Appt Date","Appt Time","Appointment Type","Insurance"];
+  const rows = !q
+    ? cachedRows
+    : cachedRows.filter((r) => {
+        const blob = [
+          r.patient_first,
+          r.patient_last,
+          r.patient_status,
+          r.appointment_date,
+          r.appointment_time,
+          r.appointment_type,
+          r.insurance,
+          r.insurance_carrier,
+          r.carrier,
+          r.created_at,
+          r.confirmation_id
+        ].map((x) => String(x || "").toLowerCase()).join(" ");
+
+        return blob.includes(q);
+      });
+
+  const header = [
+    "Date Booked",
+    "Patient Name",
+    "Patient DOB",
+    "Patient Status",
+    "Appt Date",
+    "Appt Time",
+    "Appointment Type",
+    "Insurance"
+  ];
+
   const lines = [header.join(",")];
 
   for (const r of rows) {
@@ -443,18 +456,31 @@ function exportCsv() {
     const type = apptTypeLabel(r.appointment_type);
     const ins = insuranceLabel(r);
 
-    const vals = [booked, name, dob, pStatus, apptDate, apptTime, type, ins].map(csvEscape);
+    const vals = [
+      booked,
+      name,
+      dob,
+      pStatus,
+      apptDate,
+      apptTime,
+      type,
+      ins
+    ].map(csvEscape);
+
     lines.push(vals.join(","));
   }
 
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
+
   a.href = url;
   a.download = `bhfd_online_bookings_${todayYYYYMMDD()}.csv`;
+
   document.body.appendChild(a);
   a.click();
   a.remove();
+
   URL.revokeObjectURL(url);
 }
 
@@ -462,6 +488,7 @@ function exportCsv() {
 
 async function loadAll() {
   setStatus("Loading…", "");
+
   try {
     const start = (els.startDate.value || "").trim();
     const end = (els.endDate.value || "").trim();
@@ -479,20 +506,20 @@ async function loadAll() {
 
     const newCount = Number(analytics?.byStatus?.find?.(x => x.key === "new")?.count || 0);
     const existingCount = Number(analytics?.byStatus?.find?.(x => x.key === "existing")?.count || 0);
+
     renderPieChart(newCount, existingCount);
 
     setStatus("Connected", "ok");
-
-    // if you're on comm page, make sure its dropdown reflects latest cached rows
-    refreshCommPatientSelect();
   } catch (e) {
     setStatus(String(e), "err");
   }
 }
 
 /* ---------- Quick range buttons ---------- */
+
 function applyRange(mode) {
   const t = todayYYYYMMDD();
+
   if (mode === "today") {
     els.startDate.value = t;
     els.endDate.value = t;
@@ -506,6 +533,7 @@ function applyRange(mode) {
       els.startDate.value = addDays(t, -(days - 1));
     }
   }
+
   loadAll();
 }
 
@@ -537,231 +565,6 @@ async function deleteSelected() {
   }
 }
 
-/* ================================
-   COMMUNICATION (Portal texting)
-================================== */
-
-// NOTE: Your bookings table currently does NOT include phone.
-// If you later add `patient_phone` to the D1 table + endpoint, this UI will auto-fill it.
-// Otherwise staff can type/paste a number manually.
-
-function digitsOnly(s) {
-  return String(s || "").replace(/\D/g, "");
-}
-
-// US-only E.164 helper
-function toE164US(input) {
-  const raw = String(input || "").trim();
-  if (!raw) return null;
-
-  if (raw.startsWith("+")) {
-    const d = "+" + digitsOnly(raw);
-    // +1 + 10 digits => length 12 including +
-    if (/^\+1\d{10}$/.test(d)) return d;
-    return null;
-  }
-
-  const d = digitsOnly(raw);
-  if (d.length === 10) return `+1${d}`;
-  if (d.length === 11 && d.startsWith("1")) return `+${d}`;
-  return null;
-}
-
-function commRowPhone(r) {
-  // support future columns without breaking today
-  return (
-    r.patient_phone ||
-    r.phone ||
-    r.patientPhone ||
-    r.patient_wireless ||
-    r.wireless_phone ||
-    r.wirelessPhone ||
-    ""
-  );
-}
-
-function commRowLabel(r) {
-  const name = `${r.patient_first || ""} ${r.patient_last || ""}`.trim() || "—";
-  const appt = `${r.appointment_date || "—"} • ${r.appointment_time || "—"}`;
-  const type = apptTypeLabel(r.appointment_type || "");
-  return `${name} — ${appt} — ${type}`;
-}
-
-function refreshCommPatientSelect() {
-  if (!els.commPatientSelect) return;
-
-  // keep existing selection if possible
-  const prior = String(els.commPatientSelect.value || "").trim();
-
-  const rows = Array.isArray(cachedRows) ? cachedRows : [];
-  const options = [];
-
-  // Deduplicate by confirmation_id (best unique for a booking row)
-  const seen = new Set();
-  for (const r of rows) {
-    const cid = String(r.confirmation_id || "").trim();
-    if (!cid || seen.has(cid)) continue;
-    seen.add(cid);
-    options.push({ value: cid, label: commRowLabel(r) });
-  }
-
-  const html = [
-    `<option value="">Select from recent bookings…</option>`,
-    ...options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`)
-  ].join("");
-
-  els.commPatientSelect.innerHTML = html;
-
-  if (prior && seen.has(prior)) {
-    els.commPatientSelect.value = prior;
-  }
-
-  // If an option is selected, ensure patient panel stays in sync
-  if (els.commPatientSelect.value) {
-    applySelectedPatientToCommUI(els.commPatientSelect.value);
-  }
-}
-
-function applySelectedPatientToCommUI(confirmationId) {
-  const cid = String(confirmationId || "").trim();
-  const row = (cachedRows || []).find(r => String(r.confirmation_id || "").trim() === cid) || null;
-
-  if (!row) {
-    if (els.commSelName) els.commSelName.textContent = "—";
-    if (els.commSelPhone) els.commSelPhone.textContent = "—";
-    if (els.commSelAppt) els.commSelAppt.textContent = "—";
-    if (els.commSelConf) els.commSelConf.textContent = "—";
-    return;
-  }
-
-  const name = `${row.patient_first || ""} ${row.patient_last || ""}`.trim() || "—";
-  const phone = commRowPhone(row) || "—";
-  const appt = `${row.appointment_date || "—"} at ${row.appointment_time || "—"} • ${apptTypeLabel(row.appointment_type || "")}`;
-  const conf = String(row.confirmation_id || "").trim() || "—";
-
-  if (els.commSelName) els.commSelName.textContent = name;
-  if (els.commSelPhone) els.commSelPhone.textContent = phone;
-  if (els.commSelAppt) els.commSelAppt.textContent = appt;
-  if (els.commSelConf) els.commSelConf.textContent = conf;
-
-  // Try to auto-fill To if we have a phone
-  if (els.commTo) {
-    const e164 = toE164US(phone);
-    if (e164) els.commTo.value = e164;
-    // also prime message log search box
-    if (els.commSearchTo && e164) els.commSearchTo.value = e164;
-  }
-}
-
-function updateCharCount() {
-  if (!els.commBody || !els.commCharCount) return;
-  const n = String(els.commBody.value || "").length;
-  els.commCharCount.textContent = String(n);
-}
-
-function renderCommMessagesTable(results) {
-  if (!els.commMessagesBody) return;
-
-  const rows = Array.isArray(results) ? results : [];
-  if (!rows.length) {
-    els.commMessagesBody.innerHTML = `<tr><td colspan="4" class="empty">No messages found for this number.</td></tr>`;
-    return;
-  }
-
-  els.commMessagesBody.innerHTML = rows.map((m) => {
-    const date = String(m.created_at || m.date || m.createdAt || "").replace("T", " ").slice(0, 19) || "—";
-    const to = String(m.to || m.To || m.recipient || "").trim() || "—";
-    const body = String(m.body || m.message || m.Body || "").trim() || "—";
-    const status = String(m.status || m.Status || "").trim() || "—";
-
-    return `
-      <tr>
-        <td>${escapeHtml(date)}</td>
-        <td>${escapeHtml(to)}</td>
-        <td>${escapeHtml(body)}</td>
-        <td>${escapeHtml(status)}</td>
-      </tr>
-    `;
-  }).join("");
-}
-
-async function commLoadMessagesForInput() {
-  const raw = (els.commSearchTo?.value || "").trim();
-  const to = toE164US(raw);
-  if (!to) {
-    renderCommMessagesTable([]);
-    setCommStatus("Enter a valid US phone (10 digits or +1…)", "err");
-    return;
-  }
-
-  setCommStatus("Loading messages…", "");
-  try {
-    const data = await api(`/office/messages?to=${encodeURIComponent(to)}`);
-    renderCommMessagesTable(data.results || data.messages || []);
-    setCommStatus("Loaded", "ok");
-  } catch (e) {
-    setCommStatus(String(e), "err");
-  }
-}
-
-async function commSendMessage() {
-  const toRaw = (els.commTo?.value || "").trim();
-  const body = String(els.commBody?.value || "").trim();
-
-  const to = toE164US(toRaw);
-  if (!to) {
-    setCommStatus("Please enter a valid US phone number.", "err");
-    return;
-  }
-  if (!body) {
-    setCommStatus("Message cannot be empty.", "err");
-    return;
-  }
-  if (body.length > 1000) {
-    setCommStatus("Message is too long.", "err");
-    return;
-  }
-
-  const selectedCid = String(els.commPatientSelect?.value || "").trim() || null;
-
-  setCommStatus("Sending…", "");
-  if (els.btnCommSend) els.btnCommSend.disabled = true;
-
-  try {
-    const payload = {
-      to,
-      body,
-      // optional context for your backend logging
-      context: selectedCid ? { confirmationId: selectedCid } : undefined,
-    };
-
-    // Your worker should implement this endpoint:
-    // POST /office/messages/send  { to:"+1...", body:"..." }
-    const res = await api("/office/messages/send", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-
-    setCommStatus("Sent", "ok");
-
-    // auto-load log for that number
-    if (els.commSearchTo) els.commSearchTo.value = to;
-    await commLoadMessagesForInput();
-
-    // clear message body (keep the To)
-    if (els.commBody) {
-      els.commBody.value = "";
-      updateCharCount();
-    }
-
-    return res;
-  } catch (e) {
-    setCommStatus(String(e), "err");
-  } finally {
-    if (els.btnCommSend) els.btnCommSend.disabled = false;
-  }
-}
-
 /* ---------------- Sidebar helpers ---------------- */
 
 function openSidebar() {
@@ -790,25 +593,18 @@ function setActiveNav(route) {
 function showRoute(route) {
   const r = route || "dashboard";
 
-  if (els.routeDashboard) els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
-  if (els.routeAnalytics) els.routeAnalytics.classList.toggle("hidden", r !== "analytics");
-  if (els.routeCommunication) els.routeCommunication.classList.toggle("hidden", r !== "communication");
+  if (els.routeDashboard) {
+    els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
+  }
 
   setActiveNav(r);
-
-  // route-specific init
-  if (r === "communication") {
-    refreshCommPatientSelect();
-    updateCharCount();
-    setCommStatus("", "");
-  }
 
   if (window.innerWidth <= 900) closeSidebar();
 }
 
 function parseHashRoute() {
   const h = (location.hash || "").replace("#/", "").trim();
-  if (h === "analytics" || h === "communication" || h === "dashboard") return h;
+  if (h === "dashboard") return h;
   return "dashboard";
 }
 
@@ -818,11 +614,9 @@ function wireDashboardOnce() {
   if (uiWired) return;
   uiWired = true;
 
-  // sidebar controls
   els.btnMenu?.addEventListener("click", toggleSidebar);
   els.sidebarOverlay?.addEventListener("click", closeSidebar);
 
-  // nav click (route)
   document.querySelectorAll(".nav-item").forEach((item) => {
     item.addEventListener("click", () => {
       const route = item.dataset.route || "dashboard";
@@ -839,42 +633,7 @@ function wireDashboardOnce() {
   els.btnRefresh?.addEventListener("click", () => loadAll());
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
-
-  // delete
   els.btnDeleteSelected?.addEventListener("click", deleteSelected);
-
-  // communication wiring
-  els.btnCommRefresh?.addEventListener("click", () => {
-    // refresh dashboard data so comm has newest bookings
-    loadAll().then(() => {
-      refreshCommPatientSelect();
-      setCommStatus("Refreshed", "ok");
-    }).catch((e) => setCommStatus(String(e), "err"));
-  });
-
-  els.commPatientSelect?.addEventListener("change", () => {
-    const cid = String(els.commPatientSelect.value || "").trim();
-    if (!cid) {
-      applySelectedPatientToCommUI(null);
-      return;
-    }
-    applySelectedPatientToCommUI(cid);
-
-    // Auto-load message log if we have a valid number
-    const maybeTo = toE164US(els.commTo?.value || "");
-    if (maybeTo) {
-      if (els.commSearchTo) els.commSearchTo.value = maybeTo;
-      commLoadMessagesForInput();
-    }
-  });
-
-  els.commBody?.addEventListener("input", updateCharCount);
-  els.btnCommSend?.addEventListener("click", commSendMessage);
-
-  els.btnCommLoad?.addEventListener("click", commLoadMessagesForInput);
-  els.commSearchTo?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") commLoadMessagesForInput();
-  });
 
   const doLogout = () => {
     clearAuth();
@@ -919,7 +678,6 @@ els.loginForm.addEventListener("submit", async (e) => {
     els.startDate.value = addDays(t, -29);
 
     wireDashboardOnce();
-
     showRoute(parseHashRoute());
 
     await loadAll();
