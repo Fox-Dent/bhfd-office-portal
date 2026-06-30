@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- FoxDent Tab Icon -->
-    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/png" href="/favicon.png" />
 
     <link rel="stylesheet" href="styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -92,49 +92,29 @@
       </aside>
 
       <div class="app-main">
-                <!-- ===========================
-             DASHBOARD
-        ============================ -->
+        <!-- DASHBOARD -->
         <section id="route-dashboard">
-
           <div class="container">
-
             <header class="header">
               <div class="brand">
                 <div class="brand-left">
                   <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
-
                   <div class="brand-stack">
-                    <div class="powered">
-                      Powered by <span class="foxdent">FoxDent</span>
-                    </div>
-
-                    <div class="welcome">
-                      Welcome, Brook Hollow Family Dentistry
-                    </div>
-
-                    <div class="brand-sub">
-                      Office Portal • Online Bookings Dashboard
-                    </div>
+                    <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                    <div class="welcome">Welcome, Brook Hollow Family Dentistry</div>
+                    <div class="brand-sub">Office Portal • Online Bookings Dashboard</div>
                   </div>
                 </div>
               </div>
 
               <div class="header-actions">
-                <button id="btnLogout" class="btn btn-secondary" type="button">
-                  Logout
-                </button>
-
-                <button id="btnRefresh" class="btn" type="button">
-                  Refresh
-                </button>
+                <button id="btnLogout" class="btn btn-secondary" type="button">Logout</button>
+                <button id="btnRefresh" class="btn" type="button">Refresh</button>
               </div>
             </header>
 
             <section class="filters card">
-
               <div class="filters-row">
-
                 <div class="field">
                   <label for="startDate">Start</label>
                   <input id="startDate" type="date" />
@@ -153,677 +133,335 @@
                 </div>
 
                 <div class="status">
-                  <span id="statusText" class="status-text">
-                    Not connected
-                  </span>
+                  <span id="statusText" class="status-text">Not connected</span>
                 </div>
-
               </div>
-
             </section>
 
             <section class="grid">
-
               <div class="card chart-card">
-
                 <div class="card-top">
                   <div>
-                    <div class="card-title">
-                      Scheduled Appointments
-                    </div>
-
-                    <div class="card-sub" id="scheduledMeta">
-                      —
-                    </div>
+                    <div class="card-title">Scheduled Appointments</div>
+                    <div class="card-sub" id="scheduledMeta">—</div>
                   </div>
                 </div>
-
                 <div class="chart-wrap">
                   <canvas id="lineChart" height="120"></canvas>
                 </div>
-
               </div>
 
               <div class="card chart-card">
-
                 <div class="card-top">
                   <div>
-                    <div class="card-title">
-                      New Patients
-                    </div>
-
-                    <div class="card-sub" id="newMeta">
-                      —
-                    </div>
+                    <div class="card-title">New Patients</div>
+                    <div class="card-sub" id="newMeta">—</div>
                   </div>
                 </div>
-
                 <div class="chart-wrap pie">
                   <canvas id="pieChart" height="160"></canvas>
                 </div>
-
                 <div class="legend">
-                  <div class="legend-item">
-                    <span class="dot dot-new"></span>
-                    New Patients
-                  </div>
-
-                  <div class="legend-item">
-                    <span class="dot dot-return"></span>
-                    Returning Patients
-                  </div>
+                  <div class="legend-item"><span class="dot dot-new"></span> New Patients</div>
+                  <div class="legend-item"><span class="dot dot-return"></span> Returning Patients</div>
                 </div>
-
               </div>
-
             </section>
 
             <section class="card table-card">
-
               <div class="table-head">
-
                 <div>
-                  <div class="card-title">
-                    Online Booking Log
-                  </div>
-
-                  <div class="card-sub">
-                    Every successful booking made through the FoxDent Scheduler
-                  </div>
+                  <div class="card-title">Online Booking Log</div>
+                  <div class="card-sub">Every successful booking made through the FoxDent Scheduler</div>
                 </div>
 
                 <div class="table-tools">
-
-                  <input
-                    id="searchInput"
-                    class="search"
-                    type="search"
-                    placeholder="Search name, type, insurance..."
-                  />
-
-                  <span
-                    id="selectedCount"
-                    class="selected-count hidden">
-                    0 selected
-                  </span>
-
-                  <button
-                    id="btnDeleteSelected"
-                    class="btn btn-danger"
-                    type="button"
-                    disabled>
-
-                    Delete Selected
-
-                  </button>
-
-                  <button
-                    id="btnExport"
-                    class="btn btn-secondary"
-                    type="button">
-
-                    Export CSV
-
-                  </button>
-
+                  <input id="searchInput" class="search" type="search" placeholder="Search name, type, insurance..." />
+                  <span id="selectedCount" class="selected-count hidden">0 selected</span>
+                  <button id="btnDeleteSelected" class="btn btn-danger" type="button" disabled>Delete Selected</button>
+                  <button id="btnExport" class="btn btn-secondary" type="button">Export CSV</button>
                 </div>
-
               </div>
 
               <div class="table-wrap">
-
                 <table>
-
                   <thead>
-
                     <tr>
-
                       <th class="col-select">Del</th>
-
                       <th>Date Booked</th>
-
                       <th>Patient Name</th>
-
                       <th>Patient DOB</th>
-
                       <th>Patient Status</th>
-
                       <th>Appt Date</th>
-
                       <th>Appt Time</th>
-
                       <th>Appointment Type</th>
-
                       <th>Insurance</th>
-
                     </tr>
-
                   </thead>
-
                   <tbody id="bookingsBody">
-
                     <tr>
-
-                      <td colspan="9" class="empty">
-                        No data yet — login and refresh.
-                      </td>
-
+                      <td colspan="9" class="empty">No data yet — login and refresh.</td>
                     </tr>
-
                   </tbody>
-
                 </table>
-
               </div>
-
             </section>
 
             <footer class="footer">
-
-              <span>
-                FoxDent • Brook Hollow Family Dentistry
-              </span>
-
+              <span>FoxDent • Brook Hollow Family Dentistry</span>
             </footer>
-
           </div>
-
         </section>
 
-              <!-- ==========================================
-             ANALYTICS
-        =========================================== -->
+        <!-- ANALYTICS -->
         <section id="route-analytics" class="hidden">
-
           <div class="container analytics-container">
-
             <header class="header">
-
               <div class="brand">
-
                 <div class="brand-left">
-
-                  <img
-                    src="FoxDentLogo.png"
-                    alt="FoxDent"
-                    class="logo"
-                  />
-
+                  <img src="FoxDentLogo.png" alt="FoxDent" class="logo" />
                   <div class="brand-stack">
-
-                    <div class="powered">
-                      Powered by
-                      <span class="foxdent">FoxDent</span>
-                    </div>
-
-                    <div class="welcome">
-                      Analytics Dashboard
-                    </div>
-
-                    <div class="brand-sub">
-                      Collections • Scheduling • Office Performance
-                    </div>
-
+                    <div class="powered">Powered by <span class="foxdent">FoxDent</span></div>
+                    <div class="welcome">Analytics Dashboard</div>
+                    <div class="brand-sub">Live OpenDental Collections • Patient Attendance • Patient Lookup</div>
                   </div>
-
                 </div>
-
               </div>
 
               <div class="header-actions">
-
-                <button
-                  id="btnAnalyticsRefresh"
-                  class="btn"
-                  type="button">
-
-                  Refresh
-
-                </button>
-
+                <button id="btnAnalyticsRefresh" class="btn" type="button">Refresh Analytics</button>
               </div>
-
             </header>
 
-            <!-- DATE FILTERS -->
+            <section class="filters card analytics-toolbar">
+              <div class="filters-row">
+                <div class="field">
+                  <label for="analyticsStartDate">Start</label>
+                  <input id="analyticsStartDate" type="date" />
+                </div>
 
-            <section class="card analytics-toolbar">
+                <div class="field">
+                  <label for="analyticsEndDate">End</label>
+                  <input id="analyticsEndDate" type="date" />
+                </div>
 
-              <button class="analytics-pill active">
-                Today
-              </button>
+                <div class="quick">
+                  <button class="analytics-pill active" data-analytics-range="today" type="button">Today</button>
+                  <button class="analytics-pill" data-analytics-range="7" type="button">This Week</button>
+                  <button class="analytics-pill" data-analytics-range="30" type="button">Last 30</button>
+                  <button class="analytics-pill" data-analytics-range="mtd" type="button">This Month</button>
+                </div>
 
-              <button class="analytics-pill">
-                This Week
-              </button>
-
-              <button class="analytics-pill">
-                This Month
-              </button>
-
-              <button class="analytics-pill">
-                Custom Range
-              </button>
-
+                <div class="status">
+                  <span id="analyticsStatusText" class="status-text">Analytics not loaded</span>
+                </div>
+              </div>
             </section>
-
-            <!-- COLLECTIONS -->
 
             <section class="analytics-grid">
-
               <div class="metric-card">
-
-                <div class="metric-title">
-                  Daily Collections
-                </div>
-
-                <div id="dailyCollections" class="metric-value">
-                  $0.00
-                </div>
-
-                <div class="metric-footer">
-                  Today's posted payments
-                </div>
-
+                <div class="metric-title">Today’s Collections</div>
+                <div id="dailyCollections" class="metric-value">$0.00</div>
+                <div class="metric-footer">Payments posted today</div>
               </div>
 
               <div class="metric-card">
-
-                <div class="metric-title">
-                  Weekly Collections
-                </div>
-
-                <div id="weeklyCollections" class="metric-value">
-                  $0.00
-                </div>
-
-                <div class="metric-footer">
-                  Current week
-                </div>
-
+                <div class="metric-title">Selected Range Collections</div>
+                <div id="monthlyCollections" class="metric-value">$0.00</div>
+                <div id="selectedRangeLabel" class="metric-footer">Current selected range</div>
               </div>
 
               <div class="metric-card">
-
-                <div class="metric-title">
-                  Monthly Collections
-                </div>
-
-                <div id="monthlyCollections" class="metric-value">
-                  $0.00
-                </div>
-
-                <div class="metric-footer">
-                  Current month
-                </div>
-
+                <div class="metric-title">Payment Count</div>
+                <div id="analyticsPaymentCount" class="metric-value">0</div>
+                <div class="metric-footer">Payments in selected range</div>
               </div>
 
               <div class="metric-card">
-
-                <div class="metric-title">
-                  Collection Goal
-                </div>
-
-                <div id="collectionGoal" class="metric-value">
-                  0%
-                </div>
-
-                <div class="progress-bar">
-
-                  <div
-                    id="collectionGoalFill"
-                    class="progress-fill"
-                    style="width:0%;">
-
-                  </div>
-
-                </div>
-
+                <div class="metric-title">Average Payment</div>
+                <div id="analyticsAveragePayment" class="metric-value">$0.00</div>
+                <div class="metric-footer">Collection average</div>
               </div>
-
             </section>
-
-            <!-- COLLECTION VS PRODUCTION -->
 
             <section class="card analytics-card">
-
-              <div class="card-title">
-                Collection vs Scheduled Production
+              <div class="table-head">
+                <div>
+                  <div class="card-title">Collections by Day</div>
+                  <div class="card-sub">Live payments from OpenDental for the selected range</div>
+                </div>
               </div>
-
-              <canvas
-                id="collectionsChart"
-                height="120">
-              </canvas>
-
+              <div class="chart-wrap">
+                <canvas id="collectionsChart" height="120"></canvas>
+              </div>
             </section>
-
-            <!-- PAYMENT SOURCES -->
-
-            <section class="analytics-grid three">
-
-              <div class="card analytics-small-card">
-
-                <div class="card-title">
-                  OpenDental
-                </div>
-
-                <div class="analytics-number">
-                  $0.00
-                </div>
-
-                <div class="analytics-label">
-                  Posted Payments
-                </div>
-
-              </div>
-
-              <div class="card analytics-small-card">
-
-                <div class="card-title">
-                  Crown by Moolah
-                </div>
-
-                <div class="analytics-number">
-                  $0.00
-                </div>
-
-                <div class="analytics-label">
-                  Payment Plans
-                </div>
-
-              </div>
-
-              <div class="card analytics-small-card">
-
-                <div class="card-title">
-                  Other Payments
-                </div>
-
-                <div class="analytics-number">
-                  $0.00
-                </div>
-
-                <div class="analytics-label">
-                  Manual / Miscellaneous
-                </div>
-
-              </div>
-
-            </section>
-
-            <!-- PATIENT ANALYTICS -->
 
             <section class="analytics-grid two">
-
-              <!-- NEW PATIENTS -->
-
-              <div class="card">
-
-                <div class="card-title">
-                  New Patient Analytics
+              <div class="card analytics-card">
+                <div class="card-title">Payment Type Breakdown</div>
+                <div class="chart-wrap pie">
+                  <canvas id="paymentTypeChart" height="180"></canvas>
                 </div>
-
-                <canvas
-                  id="newPatientChart"
-                  height="180">
-                </canvas>
-
-                <div class="analytics-stat-grid">
-
-                  <div>
-
-                    <strong id="npScheduled">
-                      0
-                    </strong>
-
-                    <span>
-                      Scheduled
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="npShown">
-                      0
-                    </strong>
-
-                    <span>
-                      Showed
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="npCancelled">
-                      0
-                    </strong>
-
-                    <span>
-                      Cancelled
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="npNoShow">
-                      0
-                    </strong>
-
-                    <span>
-                      No Show
-                    </span>
-
-                  </div>
-
+                <div id="paymentTypeList" class="analytics-list">
+                  <div class="empty">Payment types will appear here.</div>
                 </div>
-
               </div>
 
-              <!-- EXISTING -->
-
-              <div class="card">
-
-                <div class="card-title">
-                  Existing Patient Analytics
+              <div class="card analytics-card">
+                <div class="card-title">Appointment Status Breakdown</div>
+                <div class="chart-wrap pie">
+                  <canvas id="appointmentStatusChart" height="180"></canvas>
                 </div>
-
-                <canvas
-                  id="existingPatientChart"
-                  height="180">
-                </canvas>
-
-                <div class="analytics-stat-grid">
-
-                  <div>
-
-                    <strong id="epScheduled">
-                      0
-                    </strong>
-
-                    <span>
-                      Scheduled
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="epShown">
-                      0
-                    </strong>
-
-                    <span>
-                      Showed
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="epCancelled">
-                      0
-                    </strong>
-
-                    <span>
-                      Cancelled
-                    </span>
-
-                  </div>
-
-                  <div>
-
-                    <strong id="epNoShow">
-                      0
-                    </strong>
-
-                    <span>
-                      No Show
-                    </span>
-
-                  </div>
-
+                <div id="appointmentStatusList" class="analytics-list">
+                  <div class="empty">Appointment statuses will appear here.</div>
                 </div>
-
               </div>
-
             </section>
 
-            <!-- PATIENT LOOKUP -->
+            <section class="analytics-grid two">
+              <div class="card">
+                <div class="card-title">New Patient Analytics</div>
+                <div class="card-sub">Scheduled vs completed, cancelled/unscheduled, and no-show behavior</div>
+
+                <canvas id="newPatientChart" height="180"></canvas>
+
+                <div class="analytics-stat-grid">
+                  <div><strong id="npScheduled">0</strong><span>Scheduled</span></div>
+                  <div><strong id="npShown">0</strong><span>Showed</span></div>
+                  <div><strong id="npCancelled">0</strong><span>Cancelled / Unscheduled</span></div>
+                  <div><strong id="npNoShow">0</strong><span>No Show</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Existing Patient Analytics</div>
+                <div class="card-sub">Existing patient attendance and missed appointment behavior</div>
+
+                <canvas id="existingPatientChart" height="180"></canvas>
+
+                <div class="analytics-stat-grid">
+                  <div><strong id="epScheduled">0</strong><span>Scheduled</span></div>
+                  <div><strong id="epShown">0</strong><span>Showed</span></div>
+                  <div><strong id="epCancelled">0</strong><span>Cancelled / Unscheduled</span></div>
+                  <div><strong id="epNoShow">0</strong><span>No Show</span></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="analytics-grid four">
+              <div class="card insight-card">
+                <div class="insight-title">Daily Summary</div>
+                <div id="dailySummary">—</div>
+              </div>
+
+              <div class="card insight-card">
+                <div class="insight-title">New Patient Show Rate</div>
+                <div id="npShowRate">—</div>
+              </div>
+
+              <div class="card insight-card">
+                <div class="insight-title">Existing Patient Show Rate</div>
+                <div id="epShowRate">—</div>
+              </div>
+
+              <div class="card insight-card">
+                <div class="insight-title">Missed / Unscheduled Appointments</div>
+                <div id="missedAppointments">—</div>
+              </div>
+            </section>
 
             <section class="card">
-
               <div class="table-head">
-
                 <div>
-
-                  <div class="card-title">
-                    Patient Collection Lookup
-                  </div>
-
-                  <div class="card-sub">
-                    Search any patient to view their financial history.
-                  </div>
-
+                  <div class="card-title">Patient Collection Lookup</div>
+                  <div class="card-sub">Search a patient, then select them to view collections, balance, last payment, and appointments.</div>
                 </div>
 
-                <input
-                  id="patientAnalyticsSearch"
-                  class="search"
-                  type="search"
-                  placeholder="Search patient..."
-                />
-
+                <div class="table-tools">
+                  <input id="patientAnalyticsSearch" class="search" type="search" placeholder="Search patient name, chart, phone..." />
+                  <button id="btnPatientSearch" class="btn btn-secondary" type="button">Search</button>
+                </div>
               </div>
 
               <div class="table-wrap">
-
                 <table>
-
                   <thead>
-
                     <tr>
-
                       <th>Patient</th>
-
-                      <th>Total Collected</th>
-
-                      <th>Outstanding Balance</th>
-
-                      <th>Last Payment</th>
-
-                      <th>Next Appointment</th>
-
+                      <th>PatNum</th>
+                      <th>Status</th>
+                      <th>Balance</th>
+                      <th>Action</th>
                     </tr>
-
                   </thead>
-
-                  <tbody id="patientAnalyticsBody">
-
+                  <tbody id="patientSearchBody">
                     <tr>
-
-                      <td colspan="5" class="empty">
-                        Patient analytics will appear here.
-                      </td>
-
+                      <td colspan="5" class="empty">Search for a patient to begin.</td>
                     </tr>
-
                   </tbody>
-
                 </table>
-
               </div>
-
             </section>
 
-            <!-- OFFICE INSIGHTS -->
-
-            <section class="analytics-grid four">
-
-              <div class="card insight-card">
-
-                <div class="insight-title">
-                  Daily Summary
+            <section id="patientDetailCard" class="card hidden">
+              <div class="table-head">
+                <div>
+                  <div class="card-title" id="patientDetailName">Patient Details</div>
+                  <div class="card-sub" id="patientDetailSub">OpenDental patient analytics</div>
                 </div>
-
-                <div id="dailySummary">
-                  —
-                </div>
-
               </div>
 
-              <div class="card insight-card">
-
-                <div class="insight-title">
-                  New Patient Show Rate
+              <section class="analytics-grid four patient-detail-grid">
+                <div class="metric-card">
+                  <div class="metric-title">Total Collected</div>
+                  <div id="patientTotalCollected" class="metric-value">$0.00</div>
+                  <div id="patientPaymentCount" class="metric-footer">0 payments</div>
                 </div>
 
-                <div id="npShowRate">
-                  —
+                <div class="metric-card">
+                  <div class="metric-title">Outstanding Balance</div>
+                  <div id="patientBalance" class="metric-value">$0.00</div>
+                  <div id="patientInsuranceEstimate" class="metric-footer">Insurance estimate: $0.00</div>
                 </div>
 
+                <div class="metric-card">
+                  <div class="metric-title">Last Payment</div>
+                  <div id="patientLastPayment" class="metric-value">$0.00</div>
+                  <div id="patientLastPaymentMeta" class="metric-footer">—</div>
+                </div>
+
+                <div class="metric-card">
+                  <div class="metric-title">Next Appointment</div>
+                  <div id="patientNextAppointment" class="metric-value small-value">—</div>
+                  <div id="patientNextAppointmentMeta" class="metric-footer">—</div>
+                </div>
+              </section>
+
+              <div class="table-wrap patient-detail-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Recent Payment Date</th>
+                      <th>Amount</th>
+                      <th>Type</th>
+                      <th>Source</th>
+                    </tr>
+                  </thead>
+                  <tbody id="patientPaymentsBody">
+                    <tr>
+                      <td colspan="4" class="empty">No recent payments loaded.</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-
-              <div class="card insight-card">
-
-                <div class="insight-title">
-                  Existing Patient Show Rate
-                </div>
-
-                <div id="epShowRate">
-                  —
-                </div>
-
-              </div>
-
-              <div class="card insight-card">
-
-                <div class="insight-title">
-                  Missed Appointments
-                </div>
-
-                <div id="missedAppointments">
-                  —
-                </div>
-
-              </div>
-
             </section>
 
             <footer class="footer">
-
-              FoxDent Analytics Reader
-
+              <span>FoxDent Analytics Reader • Live OpenDental Data</span>
             </footer>
-
           </div>
-
         </section>
-              </div>
+      </div>
     </div>
 
     <script src="app.js"></script>
