@@ -644,11 +644,11 @@ function renderAttendanceChart(canvasId, chartRefName, summary) {
       }],
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: "64%",
-      plugins: { legend: { display: false } },
-    },
+  responsive: false,
+  maintainAspectRatio: false,
+  cutout: "64%",
+  plugins: { legend: { display: false } },
+},
   });
 
   if (chartRefName === "newPatientChart") newPatientChart = chart;
