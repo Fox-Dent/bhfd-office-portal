@@ -915,3 +915,18 @@ td.col-select {
     grid-template-columns: 1fr;
   }
 }
+/* =========================================================
+   FIX: Analytics patient chart infinite resize
+========================================================= */
+#newPatientChart,
+#existingPatientChart {
+  display: block !important;
+  width: 100% !important;
+  height: 260px !important;
+  max-height: 260px !important;
+  min-height: 260px !important;
+}
+
+#route-analytics .card canvas {
+  max-height: 260px !important;
+}
