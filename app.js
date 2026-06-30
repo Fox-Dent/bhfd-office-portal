@@ -3,6 +3,8 @@ const OFFICE_API_BASE = "https://foxdentofficeportal.calcifer6456.workers.dev";
 let AUTH_HEADER = null;
 let lineChart = null;
 let pieChart = null;
+let newPatientShowChart = null;
+let existingPatientShowChart = null;
 
 const AUTH_STORAGE_KEY = "bhfd_office_auth_basic";
 
@@ -45,10 +47,16 @@ const els = {
 
   // route sections
   routeDashboard: document.getElementById("route-dashboard"),
+  routeAnalytics: document.getElementById("route-analytics"),
+
+  // analytics
+  btnAnalyticsRefresh: document.getElementById("btnAnalyticsRefresh"),
+  analyticsStatus: document.getElementById("analyticsStatus"),
 };
 
 let cachedRows = [];
 let uiWired = false;
+let analyticsRendered = false;
 
 const selectedIds = new Set();
 
@@ -76,6 +84,7 @@ function setLoginError(msg) {
 }
 
 function setStatus(text, mode = "") {
+  if (!els.statusText) return;
   els.statusText.textContent = text;
   els.statusText.classList.remove("ok", "err");
   if (mode) els.statusText.classList.add(mode);
@@ -402,6 +411,53 @@ function renderPieChart(newCount, returningCount) {
   });
 }
 
+/* ---------------- Analytics mockup charts ---------------- */
+
+function renderPatientDonutChart(canvasId, data, existingChart) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return existingChart;
+
+  if (existingChart) existingChart.destroy();
+
+  return new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: ["Showed", "Cancelled", "Missed", "No Call / No Show"],
+      datasets: [{
+        data,
+        backgroundColor: ["#6f8f7a", "#d98b86", "#ed9f64", "#c94c4c"],
+        borderColor: "rgba(255,255,255,.9)",
+        borderWidth: 3
+      }]
+    },
+    options: {
+      cutout: "68%",
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+}
+
+function renderAnalyticsMockup() {
+  newPatientShowChart = renderPatientDonutChart("newPatientShowChart", [32, 6, 4, 6], newPatientShowChart);
+  existingPatientShowChart = renderPatientDonutChart("existingPatientShowChart", [132, 18, 16, 20], existingPatientShowChart);
+
+  if (els.analyticsStatus) {
+    const stamp = new Date().toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit"
+    });
+    els.analyticsStatus.textContent = `Mock data refreshed ${stamp}`;
+  }
+
+  analyticsRendered = true;
+}
+
 /* ---------------- CSV export ---------------- */
 
 function csvEscape(v) {
@@ -597,6 +653,14 @@ function showRoute(route) {
     els.routeDashboard.classList.toggle("hidden", r !== "dashboard");
   }
 
+  if (els.routeAnalytics) {
+    els.routeAnalytics.classList.toggle("hidden", r !== "analytics");
+  }
+
+  if (r === "analytics") {
+    setTimeout(() => renderAnalyticsMockup(), 0);
+  }
+
   setActiveNav(r);
 
   if (window.innerWidth <= 900) closeSidebar();
@@ -604,7 +668,7 @@ function showRoute(route) {
 
 function parseHashRoute() {
   const h = (location.hash || "").replace("#/", "").trim();
-  if (h === "dashboard") return h;
+  if (h === "dashboard" || h === "analytics") return h;
   return "dashboard";
 }
 
@@ -630,7 +694,16 @@ function wireDashboardOnce() {
     b.addEventListener("click", () => applyRange(b.dataset.range));
   });
 
+  document.querySelectorAll(".analytics-pill").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".analytics-pill").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      renderAnalyticsMockup();
+    });
+  });
+
   els.btnRefresh?.addEventListener("click", () => loadAll());
+  els.btnAnalyticsRefresh?.addEventListener("click", () => renderAnalyticsMockup());
   els.btnExport?.addEventListener("click", () => exportCsv());
   els.searchInput?.addEventListener("input", () => renderTable(cachedRows));
   els.btnDeleteSelected?.addEventListener("click", deleteSelected);
