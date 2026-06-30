@@ -458,8 +458,30 @@ img { max-width: 100%; height: auto; }
 }
 
 .chart-card { display: flex; flex-direction: column; }
-.chart-wrap { margin-top: 12px; min-height: 210px; }
-.chart-wrap.pie { max-width: 280px; margin: 12px auto 0; min-height: 210px; }
+.chart-wrap {
+  margin-top: 12px;
+  height: 260px;
+  min-height: 0;
+  position: relative;
+}
+
+.chart-wrap.pie {
+  max-width: 280px;
+  height: 260px;
+  min-height: 0;
+  margin: 12px auto 0;
+}
+
+.chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.chart-wrap,
+.chart-wrap.pie {
+  height: 260px;
+  min-height: 0;
+}
 
 .legend {
   display: flex;
